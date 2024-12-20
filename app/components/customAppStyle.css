@@ -1,0 +1,87 @@
+.Polaris-Tabs__NewTab {
+    display: none !important;
+}
+
+.Polaris-IndexTable__TableCell .Polaris-Icon {
+    margin: 0;
+}
+
+.layout-container {
+    padding: 10px;
+}
+
+.drop-zone .Polaris-Labelled--hidden {
+    width: 50% !important;
+}
+
+.Polaris-Labelled--hidden {
+    width: 50% !important;
+}
+
+.address_container .Polaris-Icon {
+    margin-left: 0 !important;
+    margin-right: 10px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.csvmodal .Polaris-Labelled--hidden {
+    width: 100% !important;
+}
+
+.Polaris-IndexFilters__ActionWrap button[aria-label="Search and filter results"] {
+    display: none !important;
+}
+
+.Polaris-IndexFilters__ActionWrap span {
+    /* display: none !important;  */
+}
+
+.Polaris-Label__RequiredIndicator::after {
+    margin-left: 0 !important;
+}
+
+.requiredIndicator {
+    color: #8e1f0b;
+}
+
+.stdropdown-input.stsearch-box input,
+.stdropdown-input.stsearch-box input:focus,
+.stdropdown-input.stsearch-box input:focus-visible {
+    border: none !important;
+}
+.stdropdown-input.stsearch-box input:focus-visible{
+    outline: none;
+}
+.stdropdown-input.stsearch-box input {
+    padding: 5px 8px
+}
+
+.stdropdown-input.stsearch-box input::placeholder{
+    /* color:#C7C7CD 
+     */
+     color: #616161;
+}
+
+.Polaris-Grid-Cell .stdropdown-container {
+    border: 1px solid #303030;
+    border-radius: 8px;
+}
+
+.Polaris-Grid-Cell .stsearch-box {
+    padding:2px
+}
+.stdropdown-tools{
+    height: 22px;
+}
+.country, .state{
+    outline: 2px solid transparent;
+    margin-top: 3px;
+}
+.country:focus-within,
+.state:focus-within{
+    outline: 2px solid #005bd3;
+    padding: 1px;
+    border-radius: 7px;
+
+}

@@ -1,0 +1,91 @@
+{% assign avg_rating = block.settings.product.metafields.demo.avg_rating.value | round %}
+<span style="color:{{ block.settings.colour }}">
+  {% render 'stars', rating: avg_rating %}
+</span>
+{% if avg_rating >= 4 %}
+  <br>
+  <img src="{{ "thumbs-up.png" | asset_img_url: '15x' }}" height="15" width="15" loading="lazy">
+  {{ 'ratings.home.recommendationText' | t }}
+{% endif %}
+
+  <style>
+    #custom-storeLocator {
+      height: 100vh; /* Set the map height to full viewport height */
+    }
+  </style>
+  <link href="{{ 'customStyle.css' | asset_url}}" rel="stylesheet" type="text/css"></link>
+<script src="{{ 'custom.js' | asset_url }}" defer="defer"></script>
+
+
+
+<div id="custom-storeLocator"></div>
+<div id="sidebar">
+  <div class="sidebarContainer">
+    <div class="serachContainer">
+      <img src="{{ "menu-svgrepo-com.png" | asset_img_url: '20px' }}" height="20" width="20" loading="lazy" />
+      <input type="search" value="" placeholder="Search Here" class="searchInput" onchange="handleSearchValue(event)" />
+      <button type="button" class="serachButton">
+        <img src="{{ "search-svgrepo-com.png" | asset_url }}" height="20" width="20" loading="lazy" />
+      </button>
+    </div>
+
+    <div class="rangeContainer">
+      <div  class="progressBarsection">
+      <label for="distanceRange">Search Radius: </label><span id="rangeValue">100</span> km
+      </div>
+      <input type="range" id="distanceRange" class="distanceRange" name="distanceRange" min="0" max="8000" value="200" oninput="handleRangeValue(event)" >
+      
+    </div>
+
+
+    <div  class="mapTypeSection">
+       {% comment %} <div  class="progressBarsection">
+          <label>Search Radius:</label> <p>200 km</p>
+      </div>
+       <input type="range" id="distanceRange" name="distanceRange" min="0" max="500" value="100" oninput="handleRangeValue(event)">
+      <input
+          type="range"
+          min="0"
+          max="8000"
+          value="200"
+          onchange="setCurrentValue(e.target.value)"
+          class="progressBar"
+      />  {% endcomment %}
+
+  </div>
+
+    <div id="sidebar-container">
+      {% for item in locations %}
+        <div class="sidebar-item">
+          <div>
+            <img src="https://i.ibb.co/2NJ9kRT/map-pin-svgrepo-com.png" />
+            </div>
+            <div>
+              {{item}}
+              {% comment %} <h3>{{item.name}}</h3>
+              <p>{{item.city}}</p> {% endcomment %}
+              </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+
+
+
+{% schema %}
+{
+  "name": "Store Locator",
+  "target": "section",
+  "settings": [
+    { "type": "product", "id": "product", "label": "product", "autofill": true },
+    { "type": "color", "id": "colour", "label": "Star Colour", "default": "#ff0000" }
+  ]
+}
+{% endschema %}
+
+
+
+
