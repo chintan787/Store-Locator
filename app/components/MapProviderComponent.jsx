@@ -23,6 +23,7 @@ export default function MapProviderComponent({apiKey}) {
   
 
   return (
+      apiKey && (
       <LoadScript googleMapsApiKey={apiKey}>
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
@@ -33,5 +34,6 @@ export default function MapProviderComponent({apiKey}) {
           {/* Child components, such as markers, info windows, etc. */}
         </GoogleMap>
       </LoadScript>
+    )
   )
 }

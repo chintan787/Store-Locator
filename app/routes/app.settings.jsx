@@ -1,11 +1,39 @@
-import { BlockStack, Box, Button, Card, Grid, InlineStack, Page, Text, TextField, Select, RadioButton } from '@shopify/polaris'
+import { BlockStack, Box, Button, Card, Grid, Page, Text, TextField, Select } from '@shopify/polaris'
 import React, { useState, useEffect } from 'react';
 // import ImageUploading from 'react-images-uploading';
 import ImageUpload from '../components/ImageUpload';
-import axios from 'axios';
+import { updateSetting } from '../utils';
+import { useActionData, useFetcher } from '@remix-run/react';
+import { useOutletContext } from "react-router-dom";
+
+
+export async function action({ request }) {
+    try {
+        const formData = await request.formData();
+        const shop = formData.get("shop");
+        const settings = JSON.parse(formData.get("settings"));
+        if (shop && settings) {
+            const isUpdated = await updateSetting({ shop, settings });
+            return { success: true, isUpdated };
+        }
+
+        return { success: false, message: "Failed to save data" }; // Example response
+    } catch (error) {
+        console.error("Error in action:", error);
+        return { success: false, message: "Failed to save data" }; // Return an error response
+    }
+}
 
 
 export default function SettingPage() {
+
+    const { shop, settings } = useOutletContext();
+    const actionData = useActionData();
+    const fetcher = useFetcher();
+
+    useEffect(()=>{
+        console.log('fetcher ',fetcher )
+    },[fetcher ])
 
     const iconData = [
         { id: 1, mapIcon: './images/blue.png', dataIcon: './images/blueb.png', color: 'blue' },
@@ -51,7 +79,16 @@ export default function SettingPage() {
         //     mapLayout: 'left',
         // }
     );
-    const [shopName, setShopName] = useState();
+    // const [shopName, setShopName] = useState();
+
+
+    useEffect(() => {
+        if (settings) {
+            console.log('data', settings)
+            setCurrentSetting(settings);
+        }
+    }, [settings])
+
 
     const radiusUnitsOptions = [
         { label: "Km", value: "km" },
@@ -75,12 +112,12 @@ export default function SettingPage() {
         // setCurrentIconSelected(e.target.value)
     }
     const handleSettingChange = async (e, id) => {
-        console.log('check',{ ...currentSetting, [id]: e })
+        console.log('check', { ...currentSetting, [id]: e })
         // if (id === 'iconColor') {
         //     setCurrentSetting({ ...currentSetting, [id]: e, customIcon: '' });
 
         // } else {
-            setCurrentSetting({ ...currentSetting, [id]: e });
+        setCurrentSetting({ ...currentSetting, [id]: e });
 
         // }
     }
@@ -89,58 +126,17 @@ export default function SettingPage() {
     }
 
     useEffect(() => {
-        const queryParams = new URLSearchParams(window.location.search);
-        const shopifyStoreUrl = queryParams.get('shop');
-        setShopName(shopifyStoreUrl);
+        // const queryParams = new URLSearchParams(window.location.search);
+        // const shopifyStoreUrl = queryParams.get('shop');
+        // setShopName(shopifyStoreUrl);
     }, [])
 
-    useEffect(() => {
-        if (shopName) {
-            handleGetSettings();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shopName])
-
-
-    const handleGetSettings = async () => {
-        fetch(`https://apps.strokeinfotech.com/store-locator/get-settings?shop=quickstart-820001e2.myshopify.com`, {
-            method: "GET",
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Credentials': 'true',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
-            },
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setCurrentSetting(data)
-                console.log('data', data);
-            })
-            .catch((error) => {
-                console.log("error:", error);
-            });
-    }
 
     const updateSettings = async () => {
-        const requestOptions = {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(currentSetting)
-        };
-
-        try {
-            const response = await fetch(`https://apps.strokeinfotech.com/store-locator/update-settings?shop=quickstart-820001e2.myshopify.com`, requestOptions);
-            const data = await response.json();
-            handleGetSettings();
-        } catch (error) {
-            console.log(error);
-        }
+        const formData = new FormData();
+        formData.append("shop", shop);
+        formData.append("settings", JSON.stringify(currentSetting));
+        fetcher.submit(formData, { method: "post", action: "/app/settings" });
     }
 
     // const [images, setImages] = React.useState([]);
@@ -163,7 +159,6 @@ export default function SettingPage() {
                             {iconData?.map((item) =>
                                 <Box key={item.id} style={currentSetting?.iconColor === item?.color ? styles.boxItemHighlighted : styles.boxItem} id="iconColor"
                                     onClick={(e) => handleSettingChange(item?.color, "iconColor",)}
-                                // onClick={(e) => handlemarkerIcon(item?.mapIcon, item?.dataIcon, "iconColor",)}
 
                                 >
                                     <Box style={styles.boxContent} background="bg-fill-info">
@@ -361,7 +356,7 @@ export default function SettingPage() {
                     </Grid> */}
                 </Card>
                 <Box style={{ maxWidth: 350, margin: '0 auto' }}>
-                    <Button size='large' textAlign='center' variant='primary' onClick={updateSettings}>Save</Button>
+                    <Button size='large' textAlign='center' variant='primary' onClick={updateSettings} loading={fetcher.state === "loading"}>Save</Button>
                 </Box>
 
             </BlockStack>

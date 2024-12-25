@@ -21,9 +21,12 @@ import './customAppStyle.css';
 import {
     SearchIcon,
 } from '@shopify/polaris-icons';
+import { addStore } from '../utils';
 
 
-export default function MapComponent({ handleStoreValues, storeDetails, setstoreDetails, setIsShowStoreDetails, isEdit, setCurrentTab, setIsEdit, currentStorePosition }) {
+
+export default function MapComponent({ apiKey, handleStoreValues, storeDetails, setstoreDetails, setIsShowStoreDetails, isEdit, setCurrentTab, setIsEdit, currentStorePosition, handleAllValues, fetcher }) {
+
 
     const [mapRef, setMapRef] = useState();
     const [mapType, setMapType] = useState('roadmap');
@@ -35,12 +38,18 @@ export default function MapComponent({ handleStoreValues, storeDetails, setstore
         width: '100%',
         height: '400px',
     };
-    console.log('currentStorePosition',currentStorePosition)
-    // const center = {
-    //     lat: 22.977, lng: 78.644
-    //     // lat: -3.745,
-    //     // lng: -38.523,
-    // };
+
+    useEffect(() => {
+      if(currentStorePosition){
+        setStorePosition({ lat: parseFloat(currentStorePosition?.lat), lng: parseFloat(currentStorePosition?.lng) });
+      }
+    }, [currentStorePosition])
+
+    const center = {
+        lat: 22.977, lng: 78.644
+        // lat: -3.745,
+        // lng: -38.523,
+    };
 
     const { isLoaded } = useJsApiLoader({
         // googleMapsApiKey: '2c54e68e43134d7f' // Add your API key here
@@ -66,9 +75,12 @@ export default function MapComponent({ handleStoreValues, storeDetails, setstore
         region: "es",
     });
 
-
+    const onLoad = (mapInstance) => {
+        setMapRef(mapInstance);
+    };
     const onMapLoad = (map) => {
-        setMapRef(map);
+        console.log('map', map);
+        // setMapRef(map);
         // const geocodeFunction = async (activity) => {
         //     console.log("activity", activity)
         //     await fromAddress(activity.city)
@@ -87,27 +99,32 @@ export default function MapComponent({ handleStoreValues, storeDetails, setstore
     };
 
 
-    const handleAllValues = async () => {
-        console.log("storeDetails", storeDetails);
-        setIsLocading(true);
-        const requestOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(storeDetails)
-        };
-        try {
-            const response = await fetch(`https://apps.strokeinfotech.com/store-locator/create-store-location?shop=quickstart-820001e2.myshopify.com`, requestOptions);
-            const data = await response.json();
-            console.log('data', data);
-            setIsShowStoreDetails(false);
-            setCurrentTab(0);
-            setstoreDetails(null);
-            setIsLocading(false);
-        } catch (error) {
-            console.log(error);
-        }
+    // const handleAllValues = async () => {
+    // console.log("storeDetails", storeDetails);
+    // setIsLocading(true);
+    // const formData = new FormData();
+    // formData.append("shop", shop); // Corrected this line
+    // formData.append("storeDetails", storeDetails); // Corrected this line
+    // fetcher.submit(formData, { method: "post", action: "/app/stores" });
 
-    }
+    // const requestOptions = {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(storeDetails)
+    // };
+    // try {
+    //     const response = await fetch(`https://apps.strokeinfotech.com/store-locator/create-store-location?shop=quickstart-820001e2.myshopify.com`, requestOptions);
+    //     const data = await response.json();
+    //     console.log('data', data);
+    //     setIsShowStoreDetails(false);
+    //     setCurrentTab(0);
+    //     setstoreDetails(null);
+    //     setIsLocading(false);
+    // } catch (error) {
+    //     console.log(error);
+    // }
+
+    // }
 
     const updateStoreDetails = async () => {
         console.log("storeDetails", storeDetails);
@@ -118,30 +135,23 @@ export default function MapComponent({ handleStoreValues, storeDetails, setstore
             body: JSON.stringify(storeDetails)
         };
 
-        try {
-            const response = await fetch(`https://apps.strokeinfotech.com/store-locator/update-store-location/${storeDetails?.id}?shop=quickstart-820001e2.myshopify.com`, requestOptions);
-            const data = await response.json();
-            console.log('data', data);
-            setIsShowStoreDetails(false);
-            setCurrentTab(0);
-            setIsEdit(!isEdit);
-            setstoreDetails(null);
-            setIsLocading(false);
-        } catch (error) {
-            console.log(error);
-        }
+        // try {
+        //     const response = await fetch(`https://apps.strokeinfotech.com/store-locator/update-store-location/${storeDetails?.id}?shop=quickstart-820001e2.myshopify.com`, requestOptions);
+        //     const data = await response.json();
+        //     console.log('data', data);
+        //     setIsShowStoreDetails(false);
+        //     setCurrentTab(0);
+        //     setIsEdit(!isEdit);
+        //     setstoreDetails(null);
+        //     setIsLocading(false);
+        // } catch (error) {
+        //     console.log(error);
+        // }
     }
     const showMarkerPosition = () => {
-        setStorePosition({ lat: Number(storeDetails?.latitude), lng: Number(storeDetails?.longitute) })
+        setStorePosition({ lat: parseFloat(storeDetails?.latitude), lng: parseFloat(storeDetails?.longitute) })
     }
 
-    useState(() => {
-        console.log("storePosition", storePosition)
-        console.log("storePosition", storePosition?.latitude)
-        console.log("storePosition", typeof storePosition?.latitude)
-        console.log("22.721363614152715", typeof 22.721363614152715)
-
-    }, [storePosition])
 
 
     return (
@@ -180,10 +190,10 @@ export default function MapComponent({ handleStoreValues, storeDetails, setstore
                 )}
             </InlineStack>
 
-            {isLoaded ?
+            {/* {isLoaded && (
                 <GoogleMap
                     mapContainerStyle={containerStyle}
-                    center={storePosition ? currentStorePosition : ''}
+                    center={ currentStorePosition || center}
                     zoom={6}
                     mapTypeId={mapType}
                     onLoad={onMapLoad}
@@ -195,8 +205,8 @@ export default function MapComponent({ handleStoreValues, storeDetails, setstore
                         mapTypeId: mapType,
                     }}
 
-                >
-                    {/* <Marker
+                > */}
+            {/* <Marker
                         position={{lat:20.823129077159784, lng:71.038433845}}
                         icon={{ url: "/map-marker-svgrepo-com.svg" }}
                     />
@@ -204,15 +214,42 @@ export default function MapComponent({ handleStoreValues, storeDetails, setstore
                         position={{ lat: 22.721363614152715, lng: 75.8566197420204 }}
                         icon={{ url: "/map-marker-svgrepo-com.svg" }}
                     /> */}
-                    {storePosition !== undefined ? (
+            {/* {storePosition !== undefined ? (
                         <Marker position={storePosition ? storePosition : ''} icon={{ url: '/map-marker-svgrepo-com.svg' }} />
-                    ) : ''}
-                </GoogleMap>
-                : ''}
+                    ) : ''} */}
+            {/* </GoogleMap>
+                )} */}
+
+
+
+            {/* new */}
+
+            {apiKey && (
+                <LoadScript googleMapsApiKey={apiKey}>
+                    <GoogleMap
+                        mapContainerStyle={containerStyle}
+                        center={storePosition}
+                        zoom={10}
+                        onLoad={onLoad}
+                    >
+                        {/* <Marker
+                        position={{lat:storePosition?.lat, lng:storePosition?.lng}}
+                        icon={{ url: "/map-marker-svgrepo-com.svg" }}
+                    /> */}
+                        {storePosition && (
+                            <Marker
+                            position={{lat:storePosition?.lat, lng:storePosition?.lng}}
+                            icon={{ url: "/map-marker-svgrepo-com.svg" }}
+                        />
+                        )}
+                        {/* Child components, such as markers, info windows, etc. */}
+                    </GoogleMap>
+                </LoadScript>
+            )}
 
             <InlineStack align="end" gap="400">
                 <Button onClick={() => setCurrentTab(0)}>Previous</Button>
-                <Button variant="primary" loading={isLoading } onClick={isEdit ? updateStoreDetails : handleAllValues}>{isEdit ? "Update Changes" : "Save Changes"}</Button>
+                <Button variant="primary" loading={fetcher.state === "loading"} onClick={isEdit ? updateStoreDetails : handleAllValues}>{isEdit ? "Update Changes" : "Save Changes"}</Button>
             </InlineStack>
 
         </BlockStack>

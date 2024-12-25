@@ -1,22 +1,25 @@
-import { json } from "@remix-run/node";
 import { Link, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
-import {  Text } from '@shopify/polaris'
+import { getSettings } from "../utils";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }) => {
-  await authenticate.admin(request);
-
-  return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
+  const { session } = await authenticate.admin(request);
+  const shop = session?.shop;
+  let settings;
+  if (shop) {
+    settings = await getSettings(shop);
+  }
+  return { apiKey: process.env.SHOPIFY_API_KEY || "" ,shop, settings };
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData();
+  const { apiKey, shop ,settings} = useLoaderData();
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
@@ -24,14 +27,13 @@ export default function App() {
         <Link to="/app" rel="home">
           Home
         </Link>
-        <Link to="/app/mapprovider" rel="mapProvider">Map Provider</Link>
-        {/* <Link to="/app/provider" rel="provider">Map Provider new</Link> */}
-
-        {/* <Link to="/app/additional">Additional page</Link> */}
+        <Link to="/app/additional">Additional page</Link>
+        <Link to="/app/provider">MapProvider</Link>
         <Link to="/app/stores">Stores</Link>
+
         <Link to="/app/settings">Settings</Link>
       </NavMenu>
-      <Outlet />
+      <Outlet context={{ shop , settings }}  />
     </AppProvider>
   );
 }

@@ -7,16 +7,16 @@ import {
     Select,
     Box,
     Grid,
-    TextField, IndexTable, Layout, useSetIndexFiltersMode, ChoiceList, useIndexResourceState, IndexFilters, useBreakpoints,
+    TextField, IndexTable, Layout, ChoiceList, useIndexResourceState, IndexFilters,
     Icon, FormLayout, LegacyCard,
     Tabs,
     DropZone, Thumbnail, LegacyStack, Banner, List,
-    InlineError, Frame, Modal, TextContainer, Divider, DescriptionList, Link
+    InlineError, Frame, Modal, Divider, DescriptionList, Link
 } from "@shopify/polaris";
 import '../components/customAppStyle.css'
 import Papa from "papaparse";
 import {
-    ImportIcon, ExportIcon, ViewIcon, SearchIcon, NoteIcon, LocationFilledIcon, DeleteIcon, EditIcon, FileFilledIcon
+    ImportIcon, ExportIcon, ViewIcon, NoteIcon, LocationFilledIcon, DeleteIcon, EditIcon, FileFilledIcon
 } from '@shopify/polaris-icons';
 
 import {
@@ -26,10 +26,45 @@ import {
     LanguageSelect,
 } from "react-country-state-city";
 import "react-country-state-city/dist/react-country-state-city.css";
-
+import { useOutletContext } from "react-router-dom";
 import MapComponent from "../components/MapComponent";
+import { addStore, getStores } from "../utils";
+import { useFetcher, useLoaderData } from '@remix-run/react';
+import { authenticate } from "../shopify.server";
+
+export const loader = async ({ request }) => {
+    const { session } = await authenticate.admin(request);
+    const shop = session?.shop;
+    let stores;
+    if (shop) {
+        stores = await getStores(shop);
+    }
+    return { stores };
+};
+
+
+export async function action({ request }) {
+    try {
+        const formData = await request.formData();
+        const shop = formData.get("shop");
+        const addstoreDetails = formData.get("storeDetails");
+        if (shop && addstoreDetails) {
+            const isUpdated = await addStore({ shop, addstoreDetails });
+            return { success: true, isUpdated };
+        }
+        return { success: false, message: "Failed to save data" }; // Example response
+    } catch (error) {
+        console.error("Error in action:", error);
+        return { success: false, message: "Failed to save data" }; // Return an error response
+    }
+}
 
 export default function StorePage() {
+    const { stores } = useLoaderData();
+    const { shop, settings } = useOutletContext();
+    const fetcher = useFetcher();
+
+
     const [errorMessages, setErrorMessages] = useState({});
     const [storeData, setStoreData] = useState();
     const [filterData, setStoreFilterData] = useState();
@@ -45,8 +80,8 @@ export default function StorePage() {
         { label: "Country", value: "country desc", directionLabel: "Z-A" },
     ];
     const [sortSelected, setSortSelected] = useState(["store asc"]);
-    const [phonecode , setPhoneCode] = useState();
-    const [currentStorePosition , setCurrentStorePosition] = useState();
+    const [phonecode, setPhoneCode] = useState();
+    const [currentStorePosition, setCurrentStorePosition] = useState();
     // const { mode, setMode } = useSetIndexFiltersMode('DEFAULT');
 
     // new store
@@ -105,6 +140,7 @@ export default function StorePage() {
     const [readFile, setReadFile] = useState();
     const [loading, setLoading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [mapApiKey, setMapApiKey] = useState('');
 
     const resourceName = {
         singular: "store",
@@ -115,43 +151,79 @@ export default function StorePage() {
         { label: 'Draft', value: 'draft' },
     ];
 
-    useEffect(() => {
-        const queryParams = new URLSearchParams(window.location.search);
-        const shopifyStoreUrl = queryParams.get('shop');
-        setShopName(shopifyStoreUrl);
-    }, []);
 
-    const getStoreList = () => {
-        fetch(`https://apps.strokeinfotech.com/store-locator/get-store-location?shop=quickstart-820001e2.myshopify.com`, {
-            method: "GET",
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Credentials': 'true',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
-            },
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then((data) => {
-                console.log('data', data.data)
-                setStoreData(data.data);
-                setStoreFilterData(data.data)
-            })
-            .catch((error) => {
-                console.log("error:", error);
-            });
+    useEffect(() => {
+        if (stores?.length > 1) {
+            setStoreData(stores);
+            setStoreFilterData(stores);
+        }
+    }, [stores])
+
+    useEffect(() => {
+        if (settings?.googlemapapikey) {
+            setMapApiKey(settings?.googlemapapikey);
+        }
+    }, [settings])
+
+
+    const handleAllValues = async () => {
+        const formData = new FormData();
+        formData.append("shop", shop); // Corrected this line
+        formData.append("storeDetails", JSON.stringify(storeDetails)); // Corrected this line
+        fetcher.submit(formData, { method: "post", action: "/app/stores" });
     }
 
     useEffect(() => {
-        if (shopName) {
-            getStoreList();
+        // Check if the fetcher has completed the API call
+        if (fetcher?.state === "idle" && fetcher?.data) {
+            // Check for a successful response
+            if (fetcher?.data?.success) {
+                setCurrentTab(0);
+                setstoreDetails(null);
+                setIsShowStoreDetails(false); // Hide the store details
+            } else {
+                console.error("API call failed:", fetcher?.data?.message);
+            }
         }
-    }, [shopName])
+    }, [fetcher?.state, fetcher?.data]);
+
+    // useEffect(() => {
+    //     const queryParams = new URLSearchParams(window.location.search);
+    //     const shopifyStoreUrl = queryParams.get('shop');
+    //     setShopName(shopifyStoreUrl);
+    // }, []);
+
+    // const getStoreList = () => {
+    //     fetch(`https://apps.strokeinfotech.com/store-locator/get-store-location?shop=quickstart-820001e2.myshopify.com`, {
+    //         method: "GET",
+    //         headers: {
+    //             'Access-Control-Allow-Origin': '*',
+    //             'Access-Control-Allow-Credentials': 'true',
+    //             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    //             'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
+    //         },
+    //     })
+    //         .then((response) => {
+    //             if (!response?.ok) {
+    //                 throw new Error(`HTTP error! status: ${response?.status}`);
+    //             }
+    //             return response?.json();
+    //         })
+    //         .then((data) => {
+    //             console.log('data', data?.data)
+    //             setStoreData(data?.data);
+    //             setStoreFilterData(data?.data)
+    //         })
+    //         .catch((error) => {
+    //             console.log("error:", error);
+    //         });
+    // }
+
+    // useEffect(() => {
+    //     if (shopName) {
+    //         getStoreList();
+    //     }
+    // }, [shopName])
 
     const handleStoreSelectChange = useCallback(
         (value) => selectCountry(value),
@@ -161,9 +233,9 @@ export default function StorePage() {
     function disambiguateLabel(key, value) {
         switch (key) {
             case "type":
-                return value.map((val) => `type: ${val}`).join(", ");
+                return value?.map((val) => `type: ${val}`).join(", ");
             case "tone":
-                return value.map((val) => `tone: ${val}`).join(", ");
+                return value?.map((val) => `tone: ${val}`).join(", ");
             default:
                 return value;
         }
@@ -300,9 +372,7 @@ export default function StorePage() {
         setQueryValue(value); console.log('value', value);
     }, []);
 
-    useEffect(() => {
-        console.log('storeData useEffect', storeData)
-    }, [storeData]);
+
 
     const handleSorting = (val) => {
         console.log('store', storeData, val)
@@ -323,15 +393,6 @@ export default function StorePage() {
                     return 0;
                 });
                 break;
-            // case 'status active':
-            //     filteredDataResponse = [...storeData]?.filter((item) => item.status === 'active');
-            //     // console.log('filteredDataResponse', filteredDataResponse)
-            //     break;
-            // case 'status draft':
-            //     console.log('status')
-            //     filteredDataResponse = [...storeData]?.filter((item) => item.status === 'draft');
-            //     console.log('filteredDataResponse', filteredDataResponse)
-            //     break;
             case 'city asc':
                 filteredDataResponse = [...storeData]?.sort((a, b) => {
                     if (a.city < b.city) return -1;
@@ -433,7 +494,6 @@ export default function StorePage() {
         appliedFilters.push({
             key,
             label: type,
-            // label: disambiguateLabel(key,type),
             onRemove: handleTypeRemove,
         });
     }
@@ -448,26 +508,26 @@ export default function StorePage() {
     }
     const handleDeleteStoreDetails = (id) => {
         console.log('id', id);
-        fetch(`https://apps.strokeinfotech.com/store-locator/delete-store-location/${id}?shop=quickstart-820001e2.myshopify.com`, {
-            method: "DELETE",
-            headers: {
-                'Access-Control-Allow-Credentials': 'true',
-                'Access-Control-Allow-Methods': 'POST, PUT, PATCH, GET, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Origin, X-Api-Key, X-Requested-With, Content-Type, Accept, Authorization'
-            },
-        })
-            .then((response) => {
-                if (response.status === 200) {
-                    console.log('res', response);
-                    setTimeout(() => {
-                        getStoreList();
-                    }, 200)
-                }
-            })
-            .catch((error) => {
-                console.log(error)
-            }
-            );
+        // fetch(`https://apps.strokeinfotech.com/store-locator/delete-store-location/${id}?shop=quickstart-820001e2.myshopify.com`, {
+        //     method: "DELETE",
+        //     headers: {
+        //         'Access-Control-Allow-Credentials': 'true',
+        //         'Access-Control-Allow-Methods': 'POST, PUT, PATCH, GET, DELETE, OPTIONS',
+        //         'Access-Control-Allow-Headers': 'Origin, X-Api-Key, X-Requested-With, Content-Type, Accept, Authorization'
+        //     },
+        // })
+        //     .then((response) => {
+        //         if (response.status === 200) {
+        //             console.log('res', response);
+        //             setTimeout(() => {
+        //                 getStoreList();
+        //             }, 200)
+        //         }
+        //     })
+        //     .catch((error) => {
+        //         console.log(error)
+        //     }
+        //     );
     }
     const handleEditStoreDetails = (id) => {
         console.log('id', id);
@@ -494,6 +554,7 @@ export default function StorePage() {
     }
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(storeData);
+
     // const rowMarkup = storeData?.map(
     const rowMarkup = filterData?.map(
 
@@ -623,12 +684,11 @@ export default function StorePage() {
         //     setstoreDetails({ ...storeDetails, [id]: e });
         // }
         // else {
-   
-        if(id === "phone_number")
-        {
+
+        if (id === "phone_number") {
             setstoreDetails({ ...storeDetails, [id]: e });
         }
-        else{
+        else {
             setstoreDetails({ ...storeDetails, [id]: e });
         }
 
@@ -645,7 +705,7 @@ export default function StorePage() {
 
     useEffect(() => {
         if (isShowStoreDetails === false) {
-            getStoreList();
+            // getStoreList();
         }
     }, [isShowStoreDetails]);
 
@@ -772,6 +832,10 @@ export default function StorePage() {
 
     const handleBackArrowAction = () => {
         setIsShowStoreDetails(false);
+        setstoreDetails(null);
+        // setCurrentStorePosition({ });
+        // setPhoneCode();
+        // setCountryid();
         if (isEdit) {
             setIsEdit(!isEdit);
             setstoreDetails(null);
@@ -782,51 +846,52 @@ export default function StorePage() {
     function exportToCSV(data, filename = 'export.csv') {
         // Convert JSON to CSV format
         const csv = Papa.unparse(data);
-      
+
         // Create a blob from the CSV
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        
+
         // Create a link element
         const link = document.createElement('a');
-        
+
         // Set the link's download attribute
         link.href = URL.createObjectURL(blob);
         link.download = filename;
-        
+
         // Programmatically click the link to trigger the download
         document.body.appendChild(link);
         link.click();
-        
+
         // Clean up the link element
         document.body.removeChild(link);
-      }
+    }
 
-   const downloadCSV = () =>{
-    // const fileHeaders = [
-    //    "store_name",
-    // "store_address",
-    // "store_address2",
-    // "city",
-    // "state",
-    // "country",
-    // "zipcode",
-    // "phone_number",
-    // "fax_number",
-    // "email",
-    // "website",
-    // "booking_url",
-    // "store_sequcence",
-    // "hour_of_operation",
-    // "store_marker_icon",
-    // "store_image",
-    // "status",
-    //   ];
-      exportToCSV(storeData, 'storeData.csv');
-   }
+    const downloadCSV = () => {
+        // const fileHeaders = [
+        //    "store_name",
+        // "store_address",
+        // "store_address2",
+        // "city",
+        // "state",
+        // "country",
+        // "zipcode",
+        // "phone_number",
+        // "fax_number",
+        // "email",
+        // "website",
+        // "booking_url",
+        // "store_sequcence",
+        // "hour_of_operation",
+        // "store_marker_icon",
+        // "store_image",
+        // "status",
+        //   ];
+        exportToCSV(storeData, 'storeData.csv');
+    }
 
- 
 
-  
+    // useEffect(() => {
+    //     console.log('current', currentTab);
+    // }, [currentTab])
 
     return (
         <>
@@ -915,38 +980,38 @@ export default function StorePage() {
                                                 </Grid>
                                                 <Grid>
                                                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }} className="country" id="country">
-                                                        <label style={{paddingBottom:2}}>Country<span className="requiredIndicator">*</span></label>
+                                                        <label style={{ paddingBottom: 2 }}>Country<span className="requiredIndicator">*</span></label>
                                                         <div className="country">
-                                                        <CountrySelect
-                                                            id="country"
-                                                            onChange={(e) => {
-                                                                console.log("E", e);
-                                                                setCurrentStorePosition({lat:e.latitude, lng:e.longitude})
-                                                                setPhoneCode(e.phone_code)
-                                                                setCountryid(e.id);
-                                                                handleStoreValues(e.name, "country")
-                                                            }}
-                                                            defaultValue={isEdit && storeDetails && ({ name: storeDetails?.country })}
-                                                            placeHolder="Select Country"
-                                                            required={true}
-                                                        />
+                                                            <CountrySelect
+                                                                id="country"
+                                                                onChange={(e) => {
+                                                                    console.log("E", e);
+                                                                    setCurrentStorePosition({ lat: e.latitude, lng: e.longitude });
+                                                                    setPhoneCode(e.phone_code);
+                                                                    setCountryid(e.id);
+                                                                    handleStoreValues(e.name, "country");
+                                                                }}
+                                                                defaultValue={isEdit && storeDetails && ({ name: storeDetails?.country })}
+                                                                placeHolder="Select Country"
+                                                                required={true}
+                                                            />
                                                         </div>
                                                         <InlineError message={errorMessages.country} fieldID="country"></InlineError>
-                                                            {/* <div className="Polaris-TextField__Backdrop"></div> */}
+                                                        {/* <div className="Polaris-TextField__Backdrop"></div> */}
                                                     </Grid.Cell>
                                                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                                                         <label>State / Province<span className="requiredIndicator">*</span></label>
                                                         <div className="state">
-                                                        <StateSelect
-                                                            countryid={countryid}
-                                                            onChange={(e) => {
-                                                                setstateid(e.id);
-                                                                handleStoreValues(e.name, "state")
-                                                            }}
-                                                            defaultValue={isEdit && storeDetails && ({ name: storeDetails?.state })}
-                                                            required={true}
-                                                            placeHolder="Select State"
-                                                        />
+                                                            <StateSelect
+                                                                countryid={countryid}
+                                                                onChange={(e) => {
+                                                                    setstateid(e.id);
+                                                                    handleStoreValues(e.name, "state")
+                                                                }}
+                                                                defaultValue={isEdit && storeDetails && ({ name: storeDetails?.state })}
+                                                                required={true}
+                                                                placeHolder="Select State"
+                                                            />
                                                         </div>
                                                         <InlineError message={errorMessages.state} fieldID="state"></InlineError>
 
@@ -1147,7 +1212,8 @@ export default function StorePage() {
                                 // </Form>
                                 :
                                 <Card >
-                                    <MapComponent handleStoreValues={handleStoreValues} storeDetails={storeDetails} setstoreDetails={setstoreDetails} setIsShowStoreDetails={setIsShowStoreDetails} isEdit={isEdit} setCurrentTab={setCurrentTab} setIsEdit={setIsEdit} currentStorePosition={currentStorePosition} />
+                                    <Text>hello</Text>
+                                    <MapComponent apiKey={mapApiKey} handleStoreValues={handleStoreValues} storeDetails={storeDetails} setstoreDetails={setstoreDetails} setIsShowStoreDetails={setIsShowStoreDetails} isEdit={isEdit} setCurrentTab={setCurrentTab} setIsEdit={setIsEdit} currentStorePosition={currentStorePosition} handleAllValues={handleAllValues} fetcher={fetcher} />
                                 </Card>
                             }
                         </div>
@@ -1217,7 +1283,7 @@ export default function StorePage() {
                             {storeData && (
                                 <IndexTable
                                     resourceName={resourceName}
-                                    itemCount={storeData?.length}
+                                    itemCount={storeData?.length || 8}
                                     // selectedItemsCount={
                                     //     allResourcesSelected ? "All" : selectedResources.length
                                     // }
@@ -1241,8 +1307,15 @@ export default function StorePage() {
                                 // bulkActions={bulkActions}
                                 // promotedBulkActions={promotedBulkActions}
                                 >
+
                                     {rowMarkup}
+
                                 </IndexTable>
+                            )}
+                            {!storeData && (
+                                <Box padding="400">
+                                    <Text variant="headingMd" as="h6" alignment="center">No Store Found</Text>
+                                </Box>
                             )}
                         </Card>
                     </Page>
@@ -1256,7 +1329,7 @@ export default function StorePage() {
                         onClose={handlecloseModal}
                     >
                         <Modal.Section>
-                            <TextContainer>
+                            <Box>
                                 <Text as="h2" variant="headingLg">{storeDetails?.store_name}</Text>
                                 <div style={{ display: 'flex', flexDirection: 'row', alignContent: 'flex-start', alignItems: 'flex-start' }} className="address_container">
                                     {storeDetails?.city && (<Icon source={LocationFilledIcon} tone="primary" />)}
@@ -1270,7 +1343,7 @@ export default function StorePage() {
                                 <Text as="h3" variant="headingLg">Contact: {storeDetails?.phone_number}</Text>
                                 {/* <Divider /> */}
                                 {/* <Text as="h3" variant="headingLg">Filters:</Text> */}
-                            </TextContainer>
+                            </Box>
                         </Modal.Section>
                     </Modal>
                 </Frame>
@@ -1296,7 +1369,7 @@ export default function StorePage() {
                             },
 
                         ]}
-                        footer={<Link url="https://help.shopify.com/csv/product_template.csv" target="_blank"  download 
+                        footer={<Link url="https://help.shopify.com/csv/product_template.csv" target="_blank" download
                             external>
                             Download sample CSV
                         </Link>}
