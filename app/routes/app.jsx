@@ -5,6 +5,9 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import { getSettings } from "../utils";
+import {
+  APIProvider,
+} from '@vis.gl/react-google-maps';
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -27,13 +30,15 @@ export default function App() {
         <Link to="/app" rel="home">
           Home
         </Link>
-        <Link to="/app/additional">Additional page</Link>
+        {/* <Link to="/app/additional">Additional page</Link> */}
         <Link to="/app/provider">MapProvider</Link>
         <Link to="/app/stores">Stores</Link>
 
         <Link to="/app/settings">Settings</Link>
       </NavMenu>
+      <APIProvider apiKey={"AIzaSyAFlPehgw95jQld8kzBrmQ_dELOtFRUk6o"}>
       <Outlet context={{ shop , settings }}  />
+      </APIProvider>
     </AppProvider>
   );
 }

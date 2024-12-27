@@ -22,10 +22,11 @@ import {
     SearchIcon,
 } from '@shopify/polaris-icons';
 import { addStore } from '../utils';
+import CustomMapProvider from './CustomMapProvider/CustomMapProvider';
 
 
 
-export default function MapComponent({ apiKey, handleStoreValues, storeDetails, setstoreDetails, setIsShowStoreDetails, isEdit, setCurrentTab, setIsEdit, currentStorePosition, handleAllValues, fetcher }) {
+export default function MapComponent({ apiKey, handleStoreValues, storeDetails, setstoreDetails, isEdit, setCurrentTab, currentStorePosition, handleAllValues, handleUpdateStoreDetails, fetcher }) {
 
 
     const [mapRef, setMapRef] = useState();
@@ -40,16 +41,24 @@ export default function MapComponent({ apiKey, handleStoreValues, storeDetails, 
     };
 
     useEffect(() => {
-      if(currentStorePosition){
-        setStorePosition({ lat: parseFloat(currentStorePosition?.lat), lng: parseFloat(currentStorePosition?.lng) });
-      }
+        console.log('currentStorePosition', currentStorePosition)
+        if (currentStorePosition) {
+            setStorePosition({ lat: parseFloat(currentStorePosition?.lat), lng: parseFloat(currentStorePosition?.lng) });
+            setstoreDetails({ ...storeDetails, latitude: currentStorePosition?.lat, longitute: currentStorePosition?.lng })
+        }
     }, [currentStorePosition])
 
-    const center = {
-        lat: 22.977, lng: 78.644
-        // lat: -3.745,
-        // lng: -38.523,
-    };
+    useEffect(() => {
+        if (storePosition) {
+            console.log('storePosition', storePosition);
+        }
+    }, [storePosition])
+
+    // const center = {
+    //     lat: 22.977, lng: 78.644
+    //     // lat: -3.745,
+    //     // lng: -38.523,
+    // };
 
     const { isLoaded } = useJsApiLoader({
         // googleMapsApiKey: '2c54e68e43134d7f' // Add your API key here
@@ -99,57 +108,9 @@ export default function MapComponent({ apiKey, handleStoreValues, storeDetails, 
     };
 
 
-    // const handleAllValues = async () => {
-    // console.log("storeDetails", storeDetails);
-    // setIsLocading(true);
-    // const formData = new FormData();
-    // formData.append("shop", shop); // Corrected this line
-    // formData.append("storeDetails", storeDetails); // Corrected this line
-    // fetcher.submit(formData, { method: "post", action: "/app/stores" });
-
-    // const requestOptions = {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(storeDetails)
-    // };
-    // try {
-    //     const response = await fetch(`https://apps.strokeinfotech.com/store-locator/create-store-location?shop=quickstart-820001e2.myshopify.com`, requestOptions);
-    //     const data = await response.json();
-    //     console.log('data', data);
-    //     setIsShowStoreDetails(false);
-    //     setCurrentTab(0);
-    //     setstoreDetails(null);
-    //     setIsLocading(false);
-    // } catch (error) {
-    //     console.log(error);
-    // }
-
-    // }
-
-    const updateStoreDetails = async () => {
-        console.log("storeDetails", storeDetails);
-        setIsLocading(true);
-        const requestOptions = {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(storeDetails)
-        };
-
-        // try {
-        //     const response = await fetch(`https://apps.strokeinfotech.com/store-locator/update-store-location/${storeDetails?.id}?shop=quickstart-820001e2.myshopify.com`, requestOptions);
-        //     const data = await response.json();
-        //     console.log('data', data);
-        //     setIsShowStoreDetails(false);
-        //     setCurrentTab(0);
-        //     setIsEdit(!isEdit);
-        //     setstoreDetails(null);
-        //     setIsLocading(false);
-        // } catch (error) {
-        //     console.log(error);
-        // }
-    }
     const showMarkerPosition = () => {
         setStorePosition({ lat: parseFloat(storeDetails?.latitude), lng: parseFloat(storeDetails?.longitute) })
+
     }
 
 
@@ -224,7 +185,7 @@ export default function MapComponent({ apiKey, handleStoreValues, storeDetails, 
 
             {/* new */}
 
-            {apiKey && (
+            {/* {apiKey && (
                 <LoadScript googleMapsApiKey={apiKey}>
                     <GoogleMap
                         mapContainerStyle={containerStyle}
@@ -232,24 +193,29 @@ export default function MapComponent({ apiKey, handleStoreValues, storeDetails, 
                         zoom={10}
                         onLoad={onLoad}
                     >
-                        {/* <Marker
+                        <Marker
                         position={{lat:storePosition?.lat, lng:storePosition?.lng}}
                         icon={{ url: "/map-marker-svgrepo-com.svg" }}
                     /> */}
-                        {storePosition && (
+            {/* {storePosition && (
                             <Marker
                             position={{lat:storePosition?.lat, lng:storePosition?.lng}}
                             icon={{ url: "/map-marker-svgrepo-com.svg" }}
                         />
-                        )}
-                        {/* Child components, such as markers, info windows, etc. */}
-                    </GoogleMap>
+                        )} */}
+            {/* Child components, such as markers, info windows, etc. */}
+            {/* </GoogleMap>
                 </LoadScript>
+            )} */}
+
+            {/* new  */}
+            {(apiKey && storePosition) && (
+                <CustomMapProvider apiKey={apiKey} shopLocation={storePosition} showMarker={true} />
             )}
 
             <InlineStack align="end" gap="400">
                 <Button onClick={() => setCurrentTab(0)}>Previous</Button>
-                <Button variant="primary" loading={fetcher.state === "loading"} onClick={isEdit ? updateStoreDetails : handleAllValues}>{isEdit ? "Update Changes" : "Save Changes"}</Button>
+                <Button variant="primary" loading={fetcher.state === "loading"} onClick={isEdit ? handleUpdateStoreDetails : handleAllValues}>{isEdit ? "Update Changes" : "Save Changes"}</Button>
             </InlineStack>
 
         </BlockStack>

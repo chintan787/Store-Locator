@@ -1,7 +1,7 @@
 import React ,{useState} from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api';
 
-export default function MapProviderComponent({apiKey}) {
+export default function MapProviderComponent({apiKey, shopLocation}) {
 
     console.log("apiKey", apiKey);
   
@@ -27,8 +27,8 @@ export default function MapProviderComponent({apiKey}) {
       <LoadScript googleMapsApiKey={apiKey}>
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
-          center={center}
-          zoom={10}
+          center={shopLocation}
+          zoom={6}
           onLoad={onLoad}
         >
           {/* Child components, such as markers, info windows, etc. */}

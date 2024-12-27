@@ -1,10 +1,26 @@
 import { Page, Box, Text, BlockStack, Button, Card, Grid, TextField } from '@shopify/polaris'
 import React, { useState, useEffect } from 'react';
 import MapProviderComponent from '../components/MapProviderComponent';
-import { updateSetting } from '../utils';
-import { useFetcher } from '@remix-run/react';
+import { getCoordinates, getLocation, updateSetting } from '../utils';
+import { useFetcher, useLoaderData } from '@remix-run/react';
 import { useOutletContext } from "react-router-dom";
+import { authenticate } from '../shopify.server';
+import { json } from "@remix-run/node";
+import CustomMapProvider from '../components/CustomMapProvider/CustomMapProvider';
 
+export const loader = async ({ request }) => {
+  const { session, admin } = await authenticate.admin(request);
+  if (!session?.shop) {
+    throw new Error("Missing session or shop data");
+  }
+  let shopLocation;
+  if (admin) {
+    shopLocation = await getCoordinates(admin);
+    console.log("res",typeof shopLocation.lat);
+
+  }
+  return json({ shopLocation })
+}
 
 export async function action({ request }) {
   try {
@@ -13,7 +29,7 @@ export async function action({ request }) {
     const mapApiKey = formData.get("apiKey");
 
     if (shop && mapApiKey) {
-      const isUpdated =  await updateSetting({ shop, mapApiKey });
+      const isUpdated = await updateSetting({ shop, mapApiKey });
       return { success: true, isUpdated };
     }
     return { success: false, message: "Failed to save data" }; // Example response
@@ -25,14 +41,15 @@ export async function action({ request }) {
 
 export default function ProviderPage() {
 
-  const {shop, settings} = useOutletContext();
-
+  const { shop, settings } = useOutletContext();
+  const { shopLocation } = useLoaderData();
+  
   const fetcher = useFetcher();
   const [mapApiKey, setMapApiKey] = useState('');
   const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
-    console.log('shop',shop,settings);
+    console.log('shop', shop, settings);
     if (settings?.googlemapapikey) {
       setMapApiKey(settings?.googlemapapikey);
       setShowMap(!showMap);
@@ -90,7 +107,8 @@ export default function ProviderPage() {
                   value={mapApiKey}
                   onChange={(e) => handleGoogleMapApiKey(e)}
                 />
-                {showMap && <MapProviderComponent apiKey={mapApiKey} />}
+                {/* {showMap && <MapProviderComponent apiKey={mapApiKey} shopLocation={shopLocation}  />} */}
+                {showMap && <CustomMapProvider apiKey={mapApiKey} shopLocation={shopLocation}  />}
                 {/* <Box>
                     <Text as="h3"><b>28,000 map loads or searches free each month.</b></Text>
                     <Text as="p"><i>Requires billing info to get API Key.</i></Text>

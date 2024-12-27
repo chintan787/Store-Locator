@@ -28,12 +28,14 @@ import {
 import "react-country-state-city/dist/react-country-state-city.css";
 import { useOutletContext } from "react-router-dom";
 import MapComponent from "../components/MapComponent";
-import { addStore, getStores } from "../utils";
+import { addStore, deleteStore, getStores, updateStoreDetails } from "../utils";
 import { useFetcher, useLoaderData } from '@remix-run/react';
 import { authenticate } from "../shopify.server";
+import CustomMapProvider from "../components/CustomMapProvider/CustomMapProvider";
 
 export const loader = async ({ request }) => {
     const { session } = await authenticate.admin(request);
+    console.log('session',session);
     const shop = session?.shop;
     let stores;
     if (shop) {
@@ -47,11 +49,32 @@ export async function action({ request }) {
     try {
         const formData = await request.formData();
         const shop = formData.get("shop");
-        const addstoreDetails = formData.get("storeDetails");
-        if (shop && addstoreDetails) {
-            const isUpdated = await addStore({ shop, addstoreDetails });
-            return { success: true, isUpdated };
+        const action = formData.get("action");
+
+        if (action === "add") {
+            const addstoreDetails = formData.get("storeDetails");
+            if (shop && addstoreDetails) {
+                const isUpdated = await addStore({ shop, addstoreDetails });
+                return { success: true, isUpdated, action };
+            }
         }
+        else if (action === "delete") {
+            console.log('delete call');
+            const id = formData.get("id");
+            console.log('delete', id);
+            const res = await deleteStore({ shop, id });
+            console.log('res', res);
+            return { success: true, action };
+        }
+        else {
+            console.log('edit call');
+            const updatedstoreDetails = formData.get("storeDetails");
+            const check = await updateStoreDetails({ shop, updatedstoreDetails });
+            console.log('check', check);
+            return { success: true, action };
+
+        }
+
         return { success: false, message: "Failed to save data" }; // Example response
     } catch (error) {
         console.error("Error in action:", error);
@@ -167,18 +190,49 @@ export default function StorePage() {
 
 
     const handleAllValues = async () => {
+        console.log("store",storeDetails);
         const formData = new FormData();
         formData.append("shop", shop); // Corrected this line
+        formData.append("action", "add");
         formData.append("storeDetails", JSON.stringify(storeDetails)); // Corrected this line
         fetcher.submit(formData, { method: "post", action: "/app/stores" });
     }
 
+    const handleDeleteStoreDetails = (id) => {
+        console.log('id', id);
+        const formData = new FormData();
+        formData.append("shop", shop);
+        formData.append("action", "delete");
+        formData.append("id", id);
+        fetcher.submit(formData, { method: "post", action: "/app/stores" });
+    }
+    const handleUpdateStoreDetails = () => {
+        console.log('storeDetails update call!', storeDetails);
+        const formData = new FormData();
+        formData.append("shop", shop); // Corrected this line
+        formData.append("action", "edit");
+        formData.append("storeDetails", JSON.stringify(storeDetails));
+        fetcher.submit(formData, { method: "post", action: "/app/stores" });
+
+    }
     useEffect(() => {
-        // Check if the fetcher has completed the API call
-        if (fetcher?.state === "idle" && fetcher?.data) {
-            // Check for a successful response
+        console.log('fetch', fetcher);
+        if (fetcher?.state === "idle" && fetcher?.data?.action === "add") {
             if (fetcher?.data?.success) {
+                console.log('fetcher if call');
                 setCurrentTab(0);
+                setstoreDetails(null);
+                setIsShowStoreDetails(false); // Hide the store details
+            } else {
+                console.error("API call failed:", fetcher?.data?.message);
+            }
+        }
+
+        if (fetcher?.state === "idle" && fetcher?.data?.action === "edit") {
+            if (fetcher?.data?.success) {
+                setIsShowStoreDetails(false);
+                setCurrentTab(0);
+                setIsEdit(!isEdit);
                 setstoreDetails(null);
                 setIsShowStoreDetails(false); // Hide the store details
             } else {
@@ -187,43 +241,7 @@ export default function StorePage() {
         }
     }, [fetcher?.state, fetcher?.data]);
 
-    // useEffect(() => {
-    //     const queryParams = new URLSearchParams(window.location.search);
-    //     const shopifyStoreUrl = queryParams.get('shop');
-    //     setShopName(shopifyStoreUrl);
-    // }, []);
 
-    // const getStoreList = () => {
-    //     fetch(`https://apps.strokeinfotech.com/store-locator/get-store-location?shop=quickstart-820001e2.myshopify.com`, {
-    //         method: "GET",
-    //         headers: {
-    //             'Access-Control-Allow-Origin': '*',
-    //             'Access-Control-Allow-Credentials': 'true',
-    //             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    //             'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
-    //         },
-    //     })
-    //         .then((response) => {
-    //             if (!response?.ok) {
-    //                 throw new Error(`HTTP error! status: ${response?.status}`);
-    //             }
-    //             return response?.json();
-    //         })
-    //         .then((data) => {
-    //             console.log('data', data?.data)
-    //             setStoreData(data?.data);
-    //             setStoreFilterData(data?.data)
-    //         })
-    //         .catch((error) => {
-    //             console.log("error:", error);
-    //         });
-    // }
-
-    // useEffect(() => {
-    //     if (shopName) {
-    //         getStoreList();
-    //     }
-    // }, [shopName])
 
     const handleStoreSelectChange = useCallback(
         (value) => selectCountry(value),
@@ -506,33 +524,13 @@ export default function StorePage() {
         console.log('store', storeDetails)
 
     }
-    const handleDeleteStoreDetails = (id) => {
-        console.log('id', id);
-        // fetch(`https://apps.strokeinfotech.com/store-locator/delete-store-location/${id}?shop=quickstart-820001e2.myshopify.com`, {
-        //     method: "DELETE",
-        //     headers: {
-        //         'Access-Control-Allow-Credentials': 'true',
-        //         'Access-Control-Allow-Methods': 'POST, PUT, PATCH, GET, DELETE, OPTIONS',
-        //         'Access-Control-Allow-Headers': 'Origin, X-Api-Key, X-Requested-With, Content-Type, Accept, Authorization'
-        //     },
-        // })
-        //     .then((response) => {
-        //         if (response.status === 200) {
-        //             console.log('res', response);
-        //             setTimeout(() => {
-        //                 getStoreList();
-        //             }, 200)
-        //         }
-        //     })
-        //     .catch((error) => {
-        //         console.log(error)
-        //     }
-        //     );
-    }
+
+
     const handleEditStoreDetails = (id) => {
         console.log('id', id);
-        const res = storeData.filter((item) => item.id === id);
-        console.log('res', res)
+        const res = storeData?.filter((item) => item.id === id);
+        console.log('res', res);
+        console.log('res',res[0]?.latitude)
         setstoreDetails(res[0]);
         setIsEdit(!isEdit)
         setTimeout(() => {
@@ -833,6 +831,7 @@ export default function StorePage() {
     const handleBackArrowAction = () => {
         setIsShowStoreDetails(false);
         setstoreDetails(null);
+        setCurrentTab(0);
         // setCurrentStorePosition({ });
         // setPhoneCode();
         // setCountryid();
@@ -1212,8 +1211,8 @@ export default function StorePage() {
                                 // </Form>
                                 :
                                 <Card >
-                                    <Text>hello</Text>
-                                    <MapComponent apiKey={mapApiKey} handleStoreValues={handleStoreValues} storeDetails={storeDetails} setstoreDetails={setstoreDetails} setIsShowStoreDetails={setIsShowStoreDetails} isEdit={isEdit} setCurrentTab={setCurrentTab} setIsEdit={setIsEdit} currentStorePosition={currentStorePosition} handleAllValues={handleAllValues} fetcher={fetcher} />
+                                    <MapComponent apiKey={mapApiKey} handleStoreValues={handleStoreValues} storeDetails={storeDetails} setstoreDetails={setstoreDetails}  isEdit={isEdit} setCurrentTab={setCurrentTab} currentStorePosition={currentStorePosition} handleAllValues={handleAllValues} handleUpdateStoreDetails={handleUpdateStoreDetails} fetcher={fetcher} />
+
                                 </Card>
                             }
                         </div>
