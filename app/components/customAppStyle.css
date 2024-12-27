@@ -64,7 +64,8 @@
 }
 
 .Polaris-Grid-Cell .stdropdown-container {
-    border: 1px solid #303030;
+    /* border: 1px solid #303030; */
+    border: 1px solid rgba(138, 138, 138, 1);
     border-radius: 8px;
 }
 
@@ -84,4 +85,12 @@
     padding: 1px;
     border-radius: 7px;
 
+}
+.lagacyCard .Polaris-LegacyCard {
+    overflow: visible;
+}
+.stdropdown-menu {
+    border-radius: 8px;
+    z-index: 999;
+    scrollbar-width: thin;
 }

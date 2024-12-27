@@ -11,7 +11,9 @@ import {
     Icon, FormLayout, LegacyCard,
     Tabs,
     DropZone, Thumbnail, LegacyStack, Banner, List,
-    InlineError, Frame, Modal, Divider, DescriptionList, Link
+    InlineError, Frame, Modal, Divider, DescriptionList, Link,
+    InlineStack,
+    BlockStack
 } from "@shopify/polaris";
 import '../components/customAppStyle.css'
 import Papa from "papaparse";
@@ -32,10 +34,11 @@ import { addStore, deleteStore, getStores, updateStoreDetails } from "../utils";
 import { useFetcher, useLoaderData } from '@remix-run/react';
 import { authenticate } from "../shopify.server";
 import CustomMapProvider from "../components/CustomMapProvider/CustomMapProvider";
+import { Modal as AppBridgeModal } from '@shopify/app-bridge-react';
 
 export const loader = async ({ request }) => {
     const { session } = await authenticate.admin(request);
-    console.log('session',session);
+    console.log('session', session);
     const shop = session?.shop;
     let stores;
     if (shop) {
@@ -43,7 +46,6 @@ export const loader = async ({ request }) => {
     }
     return { stores };
 };
-
 
 export async function action({ request }) {
     try {
@@ -190,7 +192,7 @@ export default function StorePage() {
 
 
     const handleAllValues = async () => {
-        console.log("store",storeDetails);
+        console.log("store", storeDetails);
         const formData = new FormData();
         formData.append("shop", shop); // Corrected this line
         formData.append("action", "add");
@@ -530,7 +532,7 @@ export default function StorePage() {
         console.log('id', id);
         const res = storeData?.filter((item) => item.id === id);
         console.log('res', res);
-        console.log('res',res[0]?.latitude)
+        console.log('res', res[0]?.latitude)
         setstoreDetails(res[0]);
         setIsEdit(!isEdit)
         setTimeout(() => {
@@ -947,105 +949,107 @@ export default function StorePage() {
                                         id="Address"
                                         title="Address"
                                     >
-                                        <LegacyCard sectioned>
+                                        <div className="lagacyCard">
+                                            <LegacyCard sectioned>
 
-                                            <FormLayout>
-                                                <Grid>
-                                                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                                                        <TextField
-                                                            label="Store Address"
-                                                            requiredIndicator
-                                                            onChange={handleStoreValues}
-                                                            value={storeDetails?.store_address}
-                                                            autoComplete="off"
-                                                            id="store_address"
-                                                            required={true}
-                                                            placeholder="Enter Your Store Address"
-                                                        />
-                                                        <InlineError message={errorMessages.store_address} fieldID="store_address"></InlineError>
-
-                                                    </Grid.Cell>
-                                                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                                                        <TextField
-                                                            label="Store Address 2"
-                                                            onChange={handleStoreValues}
-                                                            value={storeDetails?.store_address2}
-                                                            autoComplete="off"
-                                                            id="store_address2"
-                                                            placeholder="Enter Your Store Address 2"
-                                                        />
-
-                                                    </Grid.Cell>
-                                                </Grid>
-                                                <Grid>
-                                                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }} className="country" id="country">
-                                                        <label style={{ paddingBottom: 2 }}>Country<span className="requiredIndicator">*</span></label>
-                                                        <div className="country">
-                                                            <CountrySelect
-                                                                id="country"
-                                                                onChange={(e) => {
-                                                                    console.log("E", e);
-                                                                    setCurrentStorePosition({ lat: e.latitude, lng: e.longitude });
-                                                                    setPhoneCode(e.phone_code);
-                                                                    setCountryid(e.id);
-                                                                    handleStoreValues(e.name, "country");
-                                                                }}
-                                                                defaultValue={isEdit && storeDetails && ({ name: storeDetails?.country })}
-                                                                placeHolder="Select Country"
+                                                <FormLayout>
+                                                    <Grid>
+                                                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                                                            <TextField
+                                                                label="Store Address"
+                                                                requiredIndicator
+                                                                onChange={handleStoreValues}
+                                                                value={storeDetails?.store_address}
+                                                                autoComplete="off"
+                                                                id="store_address"
                                                                 required={true}
+                                                                placeholder="Enter Your Store Address"
                                                             />
-                                                        </div>
-                                                        <InlineError message={errorMessages.country} fieldID="country"></InlineError>
-                                                        {/* <div className="Polaris-TextField__Backdrop"></div> */}
-                                                    </Grid.Cell>
-                                                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                                                        <label>State / Province<span className="requiredIndicator">*</span></label>
-                                                        <div className="state">
-                                                            <StateSelect
-                                                                countryid={countryid}
-                                                                onChange={(e) => {
-                                                                    setstateid(e.id);
-                                                                    handleStoreValues(e.name, "state")
-                                                                }}
-                                                                defaultValue={isEdit && storeDetails && ({ name: storeDetails?.state })}
-                                                                required={true}
-                                                                placeHolder="Select State"
-                                                            />
-                                                        </div>
-                                                        <InlineError message={errorMessages.state} fieldID="state"></InlineError>
+                                                            <InlineError message={errorMessages.store_address} fieldID="store_address"></InlineError>
 
-                                                    </Grid.Cell>
-                                                </Grid>
-                                                <Grid>
-                                                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                                                        <TextField
-                                                            type="text"
-                                                            label="City / Town"
-                                                            requiredIndicator
-                                                            onChange={handleStoreValues}
-                                                            value={storeDetails?.city}
-                                                            id="city"
-                                                            required={true}
-                                                            placeholder="Enter Your City / Town"
-                                                        />
-                                                        <InlineError message={errorMessages.city} fieldID="city"></InlineError>
-                                                    </Grid.Cell>
-                                                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                                                        <TextField
-                                                            type="text"
-                                                            label="Zip / Postal Code"
-                                                            requiredIndicator
-                                                            onChange={handleStoreValues}
-                                                            value={storeDetails?.zipcode}
-                                                            id="zipcode"
-                                                            required={true}
-                                                            placeholder="Enter Your Zip / Postal Code *"
-                                                        />
-                                                        <InlineError message={errorMessages.zipcode} fieldID="zipcode"></InlineError>
-                                                    </Grid.Cell>
-                                                </Grid>
-                                            </FormLayout>
-                                        </LegacyCard>
+                                                        </Grid.Cell>
+                                                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                                                            <TextField
+                                                                label="Store Address 2"
+                                                                onChange={handleStoreValues}
+                                                                value={storeDetails?.store_address2}
+                                                                autoComplete="off"
+                                                                id="store_address2"
+                                                                placeholder="Enter Your Store Address 2"
+                                                            />
+
+                                                        </Grid.Cell>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }} className="country" id="country">
+                                                            <label style={{ paddingBottom: 2 }}>Country<span className="requiredIndicator">*</span></label>
+                                                            <div className="country">
+                                                                <CountrySelect
+                                                                    id="country"
+                                                                    onChange={(e) => {
+                                                                        console.log("E", e);
+                                                                        setCurrentStorePosition({ lat: e.latitude, lng: e.longitude });
+                                                                        setPhoneCode(e.phone_code);
+                                                                        setCountryid(e.id);
+                                                                        handleStoreValues(e.name, "country");
+                                                                    }}
+                                                                    defaultValue={isEdit && storeDetails && ({ name: storeDetails?.country })}
+                                                                    placeHolder="Select Country"
+                                                                    required={true}
+                                                                />
+                                                            </div>
+                                                            <InlineError message={errorMessages.country} fieldID="country"></InlineError>
+                                                            {/* <div className="Polaris-TextField__Backdrop"></div> */}
+                                                        </Grid.Cell>
+                                                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                                                            <label>State / Province<span className="requiredIndicator">*</span></label>
+                                                            <div className="state">
+                                                                <StateSelect
+                                                                    countryid={countryid}
+                                                                    onChange={(e) => {
+                                                                        setstateid(e.id);
+                                                                        handleStoreValues(e.name, "state")
+                                                                    }}
+                                                                    defaultValue={isEdit && storeDetails && ({ name: storeDetails?.state })}
+                                                                    required={true}
+                                                                    placeHolder="Select State"
+                                                                />
+                                                            </div>
+                                                            <InlineError message={errorMessages.state} fieldID="state"></InlineError>
+
+                                                        </Grid.Cell>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                                                            <TextField
+                                                                type="text"
+                                                                label="City / Town"
+                                                                requiredIndicator
+                                                                onChange={handleStoreValues}
+                                                                value={storeDetails?.city}
+                                                                id="city"
+                                                                required={true}
+                                                                placeholder="Enter Your City / Town"
+                                                            />
+                                                            <InlineError message={errorMessages.city} fieldID="city"></InlineError>
+                                                        </Grid.Cell>
+                                                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                                                            <TextField
+                                                                type="text"
+                                                                label="Zip / Postal Code"
+                                                                requiredIndicator
+                                                                onChange={handleStoreValues}
+                                                                value={storeDetails?.zipcode}
+                                                                id="zipcode"
+                                                                required={true}
+                                                                placeholder="Enter Your Zip / Postal Code *"
+                                                            />
+                                                            <InlineError message={errorMessages.zipcode} fieldID="zipcode"></InlineError>
+                                                        </Grid.Cell>
+                                                    </Grid>
+                                                </FormLayout>
+                                            </LegacyCard>
+                                        </div>
                                     </Layout.AnnotatedSection>
 
                                     <Layout.AnnotatedSection
@@ -1211,7 +1215,7 @@ export default function StorePage() {
                                 // </Form>
                                 :
                                 <Card >
-                                    <MapComponent apiKey={mapApiKey} handleStoreValues={handleStoreValues} storeDetails={storeDetails} setstoreDetails={setstoreDetails}  isEdit={isEdit} setCurrentTab={setCurrentTab} currentStorePosition={currentStorePosition} handleAllValues={handleAllValues} handleUpdateStoreDetails={handleUpdateStoreDetails} fetcher={fetcher} />
+                                    <MapComponent apiKey={mapApiKey} handleStoreValues={handleStoreValues} storeDetails={storeDetails} setstoreDetails={setstoreDetails} isEdit={isEdit} setCurrentTab={setCurrentTab} currentStorePosition={currentStorePosition} handleAllValues={handleAllValues} handleUpdateStoreDetails={handleUpdateStoreDetails} fetcher={fetcher} />
 
                                 </Card>
                             }
@@ -1322,119 +1326,135 @@ export default function StorePage() {
             }
 
             <div style={{ height: '500px' }}>
-                <Frame>
-                    <Modal
-                        open={isviewDetails}
-                        onClose={handlecloseModal}
-                    >
-                        <Modal.Section>
-                            <Box>
-                                <Text as="h2" variant="headingLg">{storeDetails?.store_name}</Text>
-                                <div style={{ display: 'flex', flexDirection: 'row', alignContent: 'flex-start', alignItems: 'flex-start' }} className="address_container">
-                                    {storeDetails?.city && (<Icon source={LocationFilledIcon} tone="primary" />)}
-                                    <div>
-                                        <Text as="h3" variant="headingLg" >address</Text>
-                                        <Text as="h3" variant="headingLg">{storeDetails?.city}</Text>
-                                        <Text as="h3" variant="headingLg">{storeDetails?.state} {storeDetails?.zipcode}, {storeDetails?.country}</Text>
-                                    </div>
-                                </div>
-                                <Divider />
-                                <Text as="h3" variant="headingLg">Contact: {storeDetails?.phone_number}</Text>
-                                {/* <Divider /> */}
-                                {/* <Text as="h3" variant="headingLg">Filters:</Text> */}
-                            </Box>
-                        </Modal.Section>
-                    </Modal>
-                </Frame>
+                {/* <Frame> */}
+                <AppBridgeModal
+                    open={isviewDetails}
+                    onClose={handlecloseModal}
+                >
+                    <ui-title-bar title={storeDetails?.store_name}></ui-title-bar>
+                    <Box>
+                        <Box padding={400}>
+                            <Grid columns={{ sm: 10 }}>
+                                <Grid.Cell gap={0} columnSpan={{ xs: 6, sm: 1, md: 3, lg: 1, xl: 1 }}>
+                                    <Box>
+                                        {storeDetails?.city && (<Icon source={LocationFilledIcon} tone="primary" />)}
+                                    </Box>
+                                </Grid.Cell>
+                                <Grid.Cell columnSpan={{ xs: 6, sm: 5, md: 3, lg: 11, xl: 11 }}>
+                                    <BlockStack>
+                                        <Text as="p" variant="bodyMd">{storeDetails?.store_address}</Text>
+                                        <Text as="p" variant="bodyMd">{storeDetails?.city}</Text>
+                                        <Text as="p" variant="bodyMd">{storeDetails?.state} {storeDetails?.zipcode}, {storeDetails?.country}</Text>
+                                    </BlockStack>
+                                </Grid.Cell>
+                            </Grid>
+                        </Box>
+                        <Divider />
+                        <Box padding={400}>
+                            <Text as="h4" variant="headingMd">Contact: {storeDetails?.phone_number}</Text>
+                        </Box>
+                        {/* <Divider /> */}
+                        {/* <Text as="h3" variant="headingLg">Filters:</Text> */}
+                        {/* </Box> */}
+                    </Box>
+                </AppBridgeModal>
+                {/* </Frame> */}
             </div>
             {/* store listing by CSV  */}
             <div style={{ height: '500px' }}>
-                <Frame>
-                    <Modal
-                        size="large"
-                        // activator={activator}
-                        open={activeModal}
-                        onClose={toggleActive}
-                        title={showPreview ? "Preview your first Store" : "Import store list by CSV"}
-                        primaryAction={{
-                            content: showPreview ? 'Import stores' : 'Upload and preview',
-                            onAction: showPreview ? handleImport : uploadFile,
-                            loading: loading
-                        }}
-                        secondaryActions={[
-                            {
-                                content: 'Cancel',
-                                onAction: handleCloseModal,
-                            },
+                {/* <Frame> */}
+                <AppBridgeModal
+                    variant="large"
+                    // activator={activator}
+                    open={activeModal}
+                    onClose={toggleActive}
+                // primaryAction={{
+                //     content: showPreview ? 'Import stores' : 'Upload and preview',
+                //     onAction: showPreview ? handleImport : uploadFile,
+                //     loading: loading
+                // }}
+                // secondaryActions={[
+                //     {
+                //         content: 'Cancel',
+                //         onAction: handleCloseModal,
+                //     },
 
-                        ]}
-                        footer={<Link url="https://help.shopify.com/csv/product_template.csv" target="_blank" download
-                            external>
-                            Download sample CSV
-                        </Link>}
-                    >
-                        {/* <a href="https://help.shopify.com/csv/product_template.csv" rel="noopener noreferrer" target="_blank" data-polaris-unstyled="true" class="Polaris-Link">Download sample CSV</a> */}
-                        <Modal.Section>
-                            {showPreview ?
-                                <div>
-                                    <div style={{ paddingTop: 6, paddingBottom: 12, }}>
-                                        <Text as="p">You will be importing approximately 3 products with a total of 5 SKUs and 3 images. Importing will not overwrite any existing products that have the same product handle and will publish to all sales channels.</Text>
-                                    </div>
-                                    <Divider />
-                                    <DescriptionList
-                                        items={[
-                                            {
-                                                term: 'Store Name',
-                                                description: readFile[0]?.store_name,
-                                            },
-                                            {
-                                                term: 'Address',
-                                                description:
-                                                    readFile[0]?.store_address,
-                                            },
-                                            {
-                                                term: 'Status',
-                                                description:
-                                                    readFile[0]?.status,
-                                            },
-                                            {
-                                                term: 'Country',
-                                                description:
-                                                    readFile[0]?.country,
-                                            },
-                                            {
-                                                term: 'Email',
-                                                description:
-                                                    readFile[0]?.email,
-                                            },
-                                        ]}
-                                    />
-
+                // ]}
+                // footer={<Link url="https://help.shopify.com/csv/product_template.csv" target="_blank" download
+                //     external>
+                //     Download sample CSV
+                // </Link>}
+                >
+                    <ui-title-bar title={showPreview ? "Preview your first Store" : "Import store list by CSV"}>
+                        <button onclick={showPreview ? handleImport : uploadFile}>{showPreview ? 'Import stores' : 'Upload and preview'}</button>
+                        <button variant="primary" onclick={handleCloseModal}>
+                            Cancel
+                        </button>
+                    </ui-title-bar>
+                    {/* <a href="https://help.shopify.com/csv/product_template.csv" rel="noopener noreferrer" target="_blank" data-polaris-unstyled="true" class="Polaris-Link">Download sample CSV</a> */}
+                    <Box padding={400}>
+                        {showPreview ?
+                            <div>
+                                <div style={{ paddingTop: 6, paddingBottom: 12, }}>
+                                    <Text as="p">You will be importing approximately 3 products with a total of 5 SKUs and 3 images. Importing will not overwrite any existing products that have the same product handle and will publish to all sales channels.</Text>
                                 </div>
-                                :
-                                < div style={{ width: '100%', maxHeight: 250, height: '100%' }} className="csvmodal">
-                                    {csvFile ? <Icon
-                                        source={FileFilledIcon}
-                                        tone="base"
-                                    /> :
+                                <Divider />
+                                <DescriptionList
+                                    items={[
+                                        {
+                                            term: 'Store Name',
+                                            description: readFile[0]?.store_name,
+                                        },
+                                        {
+                                            term: 'Address',
+                                            description:
+                                                readFile[0]?.store_address,
+                                        },
+                                        {
+                                            term: 'Status',
+                                            description:
+                                                readFile[0]?.status,
+                                        },
+                                        {
+                                            term: 'Country',
+                                            description:
+                                                readFile[0]?.country,
+                                        },
+                                        {
+                                            term: 'Email',
+                                            description:
+                                                readFile[0]?.email,
+                                        },
+                                    ]}
+                                />
 
-                                        <DropZone
-                                            accept=".csv"
-                                            errorOverlayText="File type must be .csv"
-                                            type="file"
-                                            onDrop={handleDropcsvFile}
-                                            fullWidth
+                            </div>
+                            :
+                            // <Box width="100%">
+                            < div style={{ width: '100%', maxHeight: 250, height: '100%' }} className="csvmodal">
+                                {csvFile ? <Icon
+                                    source={FileFilledIcon}
+                                    tone="base"
+                                /> :
 
-                                        >
-                                            <DropZone.FileUpload />
-                                            {/* <DropZone.FileUpload /> */}
-                                        </DropZone>
-                                    }
-                                </div>
-                            }
-                        </Modal.Section>
-                    </Modal>
-                </Frame>
+                                    <DropZone
+                                        accept=".csv"
+                                        errorOverlayText="File type must be .csv"
+                                        type="file"
+                                        onDrop={handleDropcsvFile}
+                                        fullWidth
+
+                                    >
+                                        <DropZone.FileUpload />
+                                        {/* <DropZone.FileUpload /> */}
+                                    </DropZone>
+                                }
+                            </div>
+                            // </Box>
+                        }
+                    </Box>
+                </AppBridgeModal>
+                {/* </Frame> */}
             </div >
         </>
     )
