@@ -1,19 +1,22 @@
-import React from 'react'
+import React,{useEffect, useState} from 'react'
 import ImageUploading from 'react-images-uploading';
 import ArrowIcon from '../images/ArrowIcon';
 import { Box, Button } from '@shopify/polaris';
 import UpdateIcon from '../images/UpdateIcon';
 import DeleteIcon from '../images/DeleteIcon';
 
-export default function ImageUpload(props) {
-    const [images, setImages] = React.useState([]);
-    const maxNumber = 2;
+export default function ImageUpload({ images, setImages, currentSetting, setCurrentSetting }) {
+    const maxNumber = 1;
     const onChange = (imageList, addUpdateIndex) => {
         // console.log(imageList);
         setImages(imageList);
-        // console.log('custom',{...props.currentSetting, iconColor:'',customIcon: imageList});
-        props.setCurrentSetting({ ...props.currentSetting, iconColor: '',customIcon: imageList })
+        console.log('custom', { ...currentSetting, iconColor: '', customIcon: imageList });
+        setCurrentSetting({ ...currentSetting, iconColor: '', customIcon: imageList })
     };
+
+    useEffect(()=>{
+        console.log('images',images);
+    },[images])
 
     if (typeof window !== 'undefined') {
         return (
@@ -24,7 +27,7 @@ export default function ImageUpload(props) {
                 onChange={onChange}
                 maxNumber={maxNumber}
                 dataURLKey="data_url"
-                acceptType={["jpg"]}
+                acceptType={["jpg","png"]}
             >
                 {({
                     imageList,
@@ -40,24 +43,21 @@ export default function ImageUpload(props) {
                         height: '100%', display: 'flex',
                         width: '100%', justifyContent: 'center', backgroundColor: 'rgb(244, 246, 248)', padding: 8,
                     }} >
-                        {/* <Button style={[styles.buttonContainer,isDragging ? { color: "red" } : null]}   onClick={onImageUpload}
-                {...dragProps}>
-                  {images.length === maxNumber ? '':  <ArrowIcon />} 
-                </Button> */}
-                        {images.length !== maxNumber && (
+                       
+                        {images.length !== maxNumber   && (
                             <button style={styles.buttonContainer} onClick={onImageUpload} {...dragProps} >
                                 {images.length === maxNumber ? '' : <ArrowIcon />}
                             </button>
                         )}
 
-                        {imageList.map((image, index) => (
+                        { imageList?.map((image, index) => (
                             <Box style={styles.boxItem} key={index}>
                                 <div className="image-item" style={styles.boxContent}>
                                     <img src={image.data_url} alt="" width="20" height="20" style={{ objectFit: 'contain' }} />
                                 </div>
                                 <div className="image-item__btn-wrapper">
-                                    {/* <button onClick={() => onImageUpdate(index)}><UpdateIcon /></button>
-                                    <button onClick={() => onImageRemove(index)}><DeleteIcon /></button> */}
+                                    {/* <button onClick={() => onImageUpdate(index)}><UpdateIcon /></button> */}
+                                    {/* <button onClick={() => onImageRemove(index)}><DeleteIcon /></button> */}
                                     <button onClick={() => onImageUpdate(index)}>Update</button>
                                     <button onClick={() => onImageRemove(index)}>Remove</button>
                                 </div>

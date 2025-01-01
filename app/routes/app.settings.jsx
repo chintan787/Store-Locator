@@ -14,6 +14,7 @@ export async function action({ request }) {
         const settings = JSON.parse(formData.get("settings"));
         if (shop && settings) {
             const isUpdated = await updateSetting({ shop, settings });
+            console.log('is', isUpdated);
             return { success: true, isUpdated };
         }
 
@@ -31,60 +32,43 @@ export default function SettingPage() {
     const actionData = useActionData();
     const fetcher = useFetcher();
 
-    useEffect(()=>{
-        console.log('fetcher ',fetcher )
-    },[fetcher ])
-
     const iconData = [
-        { id: 1, mapIcon: './images/blue.png', dataIcon: './images/blueb.png', color: 'blue' },
-        { id: 2, mapIcon: './images/chikni.png', dataIcon: './images/chiknib.png', color: 'chikni' },
-        { id: 3, mapIcon: './images/green.png', dataIcon: './images/greenb.png', color: 'green' },
-        { id: 4, mapIcon: './images/greeni.png', dataIcon: './images/greenib.png', color: 'greeni' },
-        { id: 5, mapIcon: './images/greenio.png', dataIcon: './images/greeniob.png', color: 'greenio' },
-        { id: 6, mapIcon: './images/orange.png', dataIcon: './images/orangeb.png', color: 'orange' },
-        { id: 7, mapIcon: './images/purple.png', dataIcon: './images/purpleb.png', color: 'purple' },
-        { id: 8, mapIcon: './images/red.png', dataIcon: './images/redb.png', color: 'red' },
-        { id: 9, mapIcon: './images/skyblue.png', dataIcon: './images/skyblueb.png', color: 'skyblue' },
-        { id: 10, mapIcon: './images/yellow.png', dataIcon: './images/yellowb.png', color: 'yellow' },
-        // { id: 11, mapIcon: './images/yellow.png', dataIcon: './images/yellowb.png' },
+        { id: 1, mapIcon: './images/icons/BlueIcon.svg', color: 'blue' },
+        { id: 2, mapIcon: './images/icons/GoldenYellowIcon.svg', color: 'goldenyellow' },
+        { id: 3, mapIcon: './images/icons/CyanIcon.svg', color: 'cyan' },
+        { id: 4, mapIcon: './images/icons/GreenIcon.svg', color: 'green' },
+        { id: 5, mapIcon: './images/icons/GreenIOIcon.svg', color: 'greenio' },
+        { id: 6, mapIcon: './images/icons/OrangeIcon.svg', color: 'orange' },
+        { id: 7, mapIcon: './images/icons/PurpleIcon.svg', color: 'purple' },
+        { id: 8, mapIcon: './images/icons/RedIcon.svg', color: 'red' },
+        { id: 9, mapIcon: './images/icons/SkyblueIcon.svg', color: 'skyblue' },
+        { id: 10, mapIcon: './images/icons/YellowIcon.svg', color: 'yellow' },
     ]
+
     const mapStyleData = [
-        { id: 1, map: './images/staticmap2.jpg', type: 'Standard' },
-        { id: 2, map: './images/staticmap6.jpg', type: 'Silver' },
-        { id: 3, map: './images/staticmap4.jpg', type: 'Retro' },
-        { id: 4, map: './images/staticmap.jpg', type: 'Dark' },
-        { id: 5, map: './images/staticmap3.jpg', type: 'Night' },
-        { id: 6, map: './images/staticmap5.jpg', type: 'Aubergine' },
+        { id: 1, map: './images/staticmap2.jpg', type: 'standard' },
+        { id: 2, map: './images/staticmap6.jpg', type: 'silver' },
+        { id: 3, map: './images/staticmap4.jpg', type: 'retro' },
+        { id: 4, map: './images/staticmap.jpg', type: 'dark' },
+        { id: 5, map: './images/staticmap3.jpg', type: 'night' },
+        { id: 6, map: './images/staticmap5.jpg', type: 'aubergine' },
     ]
     const mapLayoutData = [
-        { id: 1, map: './images/left.jpg', type: 'left' },
-        { id: 2, map: './images/right.jpg', type: 'right' },
-        { id: 3, map: './images/left_top_1.jpg', type: 'lefttop' },
-        { id: 4, map: './images/right_top_1.jpg', type: 'righttop' },
+        { id: 1, map: './images/left.jpg', type: 'left', label: 'Map on Left' },
+        { id: 2, map: './images/right.jpg', type: 'right', label: 'Map on Right' },
+        { id: 3, map: './images/left_top_1.jpg', type: 'lefttop', label: 'Map on Left Top' },
+        { id: 4, map: './images/right_top_1.jpg', type: 'righttop', label: 'Map on Right Top' },
     ]
     const [currentIconSelected, setCurrentIconSelected] = useState(iconData[0]?.color);
 
-    const [currentSetting, setCurrentSetting] = useState(
-        //     {
-        //     iconColor: 'blue',
-        //     radius: 20,
-        //     radiusUnits: 0,
-        //     searchRadiusLabel: 'search Radius',
-        //     mapSearch: '',
-        //     defaultLocation: '',
-        //     zoom: 8,
-        //     storeListingType: '',
-        //     googleMapStyleId: '',
-        //     mapStyle: 'Standard',
-        //     mapLayout: 'left',
-        // }
-    );
-    // const [shopName, setShopName] = useState();
-
+    const [currentSetting, setCurrentSetting] = useState();
+    const [images, setImages] = useState([]);
 
     useEffect(() => {
         if (settings) {
-            console.log('data', settings)
+            if (settings?.customIcon) {
+                setImages(settings?.customIcon);
+            }
             setCurrentSetting(settings);
         }
     }, [settings])
@@ -105,21 +89,19 @@ export default function SettingPage() {
     ]
 
     const handleCurrentVal = async (name, item) => {
-        console.log("item.color", item)
-        console.log("item.color", name)
+
         setCurrentSetting({ ...currentSetting, [name]: item });
 
         // setCurrentIconSelected(e.target.value)
     }
     const handleSettingChange = async (e, id) => {
-        console.log('check', { ...currentSetting, [id]: e })
-        // if (id === 'iconColor') {
-        //     setCurrentSetting({ ...currentSetting, [id]: e, customIcon: '' });
+        if (id === 'iconColor') {
+            setImages([]);
+            setCurrentSetting({ ...currentSetting, [id]: e, customIcon: '' });
 
-        // } else {
-        setCurrentSetting({ ...currentSetting, [id]: e });
-
-        // }
+        } else {
+            setCurrentSetting({ ...currentSetting, [id]: e });
+        }
     }
     const handlemarkerIcon = async (val, val2, id) => {
         console.log('check', val, val2, id)
@@ -133,6 +115,7 @@ export default function SettingPage() {
 
 
     const updateSettings = async () => {
+        console.log('current', currentSetting);
         const formData = new FormData();
         formData.append("shop", shop);
         formData.append("settings", JSON.stringify(currentSetting));
@@ -153,7 +136,6 @@ export default function SettingPage() {
             <BlockStack gap="500">
                 <Card padding={{ xs: '400', sm: '500', md: '600' }} style={[styles.card,]}>
                     <Text >Map Icon Color</Text>
-
                     <Box style={{ display: 'flex', alignItems: 'center', gap: 16, }}>
                         <Box style={styles.boxContainer}>
                             {iconData?.map((item) =>
@@ -163,15 +145,16 @@ export default function SettingPage() {
                                 >
                                     <Box style={styles.boxContent} background="bg-fill-info">
                                         <img src={item.mapIcon} style={styles.images} alt={item.color} />
-                                        <img src={item.dataIcon} style={styles.images} alt={item.color} />
+                                        {/* <img src={item.dataIcon} style={styles.images} alt={item.color} /> */}
+                                        {/* <img src={item.dataIcon} style={styles.images} alt={item.color} /> */}
                                     </Box>
                                 </Box>
                             )}
 
                         </Box>
                         <Box style={{ width: '10%', height: '100%', maxHeight: 150, }}>
-                            <Box style={styles.uploadImageBoxItem} id="iconColor" >
-                                <ImageUpload setCurrentSetting={setCurrentSetting} currentSetting={currentSetting} />
+                            <Box style={currentSetting?.customIcon?.length > 0 ? styles.uploadImageHighLithedBoxItem : styles.uploadImageBoxItem} id="iconColor" >
+                                <ImageUpload images={images} setImages={setImages} currentSetting={currentSetting} setCurrentSetting={setCurrentSetting} />
                             </Box>
                         </Box>
                     </Box>
@@ -268,7 +251,7 @@ export default function SettingPage() {
                                     name="zoom"
                                     onChange={handleSettingChange}
                                     id="zoom"
-                                    placeholder="Search Radius"
+                                    placeholder="Enter zoom level"
                                     autoComplete="off" />
                             </Box>
                         </Grid.Cell>
@@ -289,7 +272,7 @@ export default function SettingPage() {
                 </Card>
 
                 <Card padding={{ xs: '400', sm: '500', md: '600' }} style={styles.card}>
-                    <Grid>
+                    {/* <Grid>
                         <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 4, xl: 4 }}>
                             <Box>
                                 <TextField
@@ -301,9 +284,11 @@ export default function SettingPage() {
                                 />
                             </Box>
                         </Grid.Cell>
-                    </Grid>
+                    </Grid> */}
                     <Box style={styles.mapStyleContainer}>
-                        <Text>Map Style</Text>
+                        <Box paddingBlockEnd="200">
+                            <Text >Map Style</Text>
+                        </Box>
                         <Grid columns={6}>
                             {mapStyleData?.map((item) =>
                                 <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 3, xl: 2 }} key={item.id} >
@@ -318,6 +303,9 @@ export default function SettingPage() {
                                         />
                                         <img src={item.map} alt={item.type} className={currentSetting?.mapStyle === item.type ? 'selected' : ''} />
                                     </div>
+                                    <Box style={{ textTransform: 'capitalize' }}>
+                                        <Text alignment='center' >{item?.type}</Text>
+                                    </Box>
                                 </Grid.Cell>
                             )}
                         </Grid>
@@ -325,7 +313,9 @@ export default function SettingPage() {
                 </Card>
 
                 <Card padding={{ xs: '400', sm: '500', md: '600' }} style={styles.card}>
-                    <Text >Map Layout Style</Text>
+                    <Box paddingBlockEnd="200">
+                        <Text>Map Layout Style</Text>
+                    </Box>
                     <Grid columns={6}>
                         {mapLayoutData.map((item) =>
                             <Grid.Cell columnSpan={{ xs: 6, sm: 2, md: 2, lg: 3, xl: 3 }} key={item.id} >
@@ -340,6 +330,9 @@ export default function SettingPage() {
                                     />
                                     <img src={item.map} alt={item.type} className={currentSetting?.mapLayout === item.type ? 'selected' : ''} />
                                 </div>
+                                <Box style={{ textTransform: 'capitalize' }}>
+                                    <Text alignment='center' >{item?.label}</Text>
+                                </Box>
                             </Grid.Cell>
                         )}
                     </Grid>
@@ -418,10 +411,11 @@ const styles = {
         backgroundColor: '#f4f6f8',
         borderRadius: '3px',
         cursor: 'pointer',
-        gap: 4
+        gap: 4,
+        height: '100%'
     },
     images: {
-        height: 20
+        height: 24
     },
     mapStyleContainer: {
         padding: "14px 0"
@@ -445,5 +439,12 @@ const styles = {
         justifyContent: 'center',
         borderRadius: 3,
         // padding: 8
+    },
+    uploadImageHighLithedBoxItem: {
+        height: '100%',
+        border: '2px solid #5c6ac4',
+        mrgin: '0 aoto',
+        justifyContent: 'center',
+        borderRadius: 3,
     }
 }

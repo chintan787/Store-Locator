@@ -40,19 +40,19 @@ export default function MapComponent({ apiKey, handleStoreValues, storeDetails, 
         height: '400px',
     };
 
-    useEffect(() => {
-        console.log('currentStorePosition', currentStorePosition)
-        if (currentStorePosition) {
-            setStorePosition({ lat: parseFloat(currentStorePosition?.lat), lng: parseFloat(currentStorePosition?.lng) });
-            setstoreDetails({ ...storeDetails, latitude: currentStorePosition?.lat, longitute: currentStorePosition?.lng })
+    useEffect(()=>{
+        if(storeDetails){
+            console.log('storeDetails',storeDetails);
         }
-    }, [currentStorePosition])
+    },[storeDetails])
 
     useEffect(() => {
-        if (storePosition) {
-            console.log('storePosition', storePosition);
+        console.log('currentStorePosition', currentStorePosition);
+        if (currentStorePosition) {
+            setStorePosition({ lat: parseFloat(currentStorePosition?.lat), lng: parseFloat(currentStorePosition?.lng) });
+            setstoreDetails({ ...storeDetails, latitude: currentStorePosition?.lat, longitude: currentStorePosition?.lng });
         }
-    }, [storePosition])
+    }, [currentStorePosition])
 
     // const center = {
     //     lat: 22.977, lng: 78.644
@@ -69,9 +69,9 @@ export default function MapComponent({ apiKey, handleStoreValues, storeDetails, 
 
     useEffect(() => {
         if (isEdit) {
-            if (storeDetails.latitude && storeDetails.longitute) {
+            if (storeDetails.latitude && storeDetails.longitude) {
                 setISClickCoordinates(true);
-                setStorePosition({ lat: Number(storeDetails?.latitude), lng: Number(storeDetails?.longitute) })
+                setStorePosition({ lat: Number(storeDetails?.latitude), lng: Number(storeDetails?.longitude) })
             }
         }
     }, [isEdit]);
@@ -109,7 +109,7 @@ export default function MapComponent({ apiKey, handleStoreValues, storeDetails, 
 
 
     const showMarkerPosition = () => {
-        setStorePosition({ lat: parseFloat(storeDetails?.latitude), lng: parseFloat(storeDetails?.longitute) })
+        setStorePosition({ lat: parseFloat(storeDetails?.latitude), lng: parseFloat(storeDetails?.longitude) })
 
     }
 
@@ -139,10 +139,10 @@ export default function MapComponent({ apiKey, handleStoreValues, storeDetails, 
 
                         />
                         <TextField
-                            placeholder="Enter Longitute"
-                            name="longitute"
-                            id="longitute"
-                            value={storeDetails?.longitute}
+                            placeholder="Enter longitude"
+                            name="longitude"
+                            id="longitude"
+                            value={storeDetails?.longitude}
                             onChange={handleStoreValues}
 
                         />

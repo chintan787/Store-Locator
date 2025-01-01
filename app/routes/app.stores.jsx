@@ -523,16 +523,11 @@ export default function StorePage() {
     // },[appliedFilters])
     const handleAddNewStore = () => {
         setIsShowStoreDetails(true);
-        console.log('store', storeDetails)
-
     }
 
 
     const handleEditStoreDetails = (id) => {
-        console.log('id', id);
         const res = storeData?.filter((item) => item.id === id);
-        console.log('res', res);
-        console.log('res', res[0]?.latitude)
         setstoreDetails(res[0]);
         setIsEdit(!isEdit)
         setTimeout(() => {

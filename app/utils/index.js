@@ -27,7 +27,7 @@ export const updateSetting = async ({ shop, mapApiKey, settings }) => {
   // if (storefront) requestBody.storefront_access_token = storefront;
 
   try {
-    console.log('requestBody', mapApiKey ? requestBody : settings)
+   
     const response = await fetch(`${process.env.API_URL}/update-settings?shop=${shop}`,
       {
         method: "PUT",
