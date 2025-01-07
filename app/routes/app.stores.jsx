@@ -88,8 +88,6 @@ export default function StorePage() {
     const { stores } = useLoaderData();
     const { shop, settings } = useOutletContext();
     const fetcher = useFetcher();
-
-
     const [errorMessages, setErrorMessages] = useState({});
     const [storeData, setStoreData] = useState();
     const [filterData, setStoreFilterData] = useState();
@@ -132,7 +130,6 @@ export default function StorePage() {
         { label: 'Last 7 days', value: 'lastWeek' },
     ];
 
-
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const [itemStrings, setItemStrings] = useState([
         "All",
@@ -147,10 +144,10 @@ export default function StorePage() {
     const [currentTab, setCurrentTab] = useState(0);
     const [isclickCoordinates, setISClickCoordinates] = useState(false)
     const [files, setFiles] = useState();
-    const [storeImage, setStoreImage] = useState();
+    const [storeImages, setstoreImages] = useState([]);
+    // const [imageURLs, setImageURLs] = useState([])
     const [isEdit, setIsEdit] = useState(false);
     const [isviewDetails, setIsViewDetails] = useState(false);
-    // const [storeImage, setStoreImage] = useState();
 
     const [rejectedFiles, setRejectedFiles] = useState([]);
     const [storeDetails, setstoreDetails] = useState();
@@ -171,11 +168,11 @@ export default function StorePage() {
         singular: "store",
         plural: "stores",
     };
+
     const statusOptions = [
         { label: 'Active', value: 'active' },
         { label: 'Draft', value: 'draft' },
     ];
-
 
     useEffect(() => {
         if (stores?.length > 1) {
@@ -190,13 +187,12 @@ export default function StorePage() {
         }
     }, [settings])
 
-
     const handleAllValues = async () => {
         console.log("store", storeDetails);
         const formData = new FormData();
-        formData.append("shop", shop); // Corrected this line
+        formData.append("shop", shop);
         formData.append("action", "add");
-        formData.append("storeDetails", JSON.stringify(storeDetails)); // Corrected this line
+        formData.append("storeDetails", JSON.stringify(storeDetails));
         fetcher.submit(formData, { method: "post", action: "/app/stores" });
     }
 
@@ -242,8 +238,6 @@ export default function StorePage() {
             }
         }
     }, [fetcher?.state, fetcher?.data]);
-
-
 
     const handleStoreSelectChange = useCallback(
         (value) => selectCountry(value),
@@ -379,8 +373,6 @@ export default function StorePage() {
     //             loading: false,
     //         };
 
-
-
     const handleStatusChange = useCallback((value) => setStatus(value), []);
     const handleTypeChange = useCallback((value) => setType(value), []);
     // const handleFiltersQueryChange = useCallback(
@@ -391,8 +383,6 @@ export default function StorePage() {
 
         setQueryValue(value); console.log('value', value);
     }, []);
-
-
 
     const handleSorting = (val) => {
         console.log('store', storeData, val)
@@ -448,7 +438,6 @@ export default function StorePage() {
         // setStoreData(filteredDataResponse);
         setStoreFilterData(filteredDataResponse)
     }
-
 
     const handleStatusRemove = useCallback(() => setStatus(undefined), []);
     const handleTypeRemove = useCallback(() => setType(undefined), []);
@@ -543,6 +532,36 @@ export default function StorePage() {
 
     }
 
+    const handleStoreStatus = async (id) => {
+        const storeToUpdate = storeData.find((store) => store.id === id);
+
+        if (storeToUpdate) {
+            const newStatus = storeToUpdate.status === 'active' ? 'draft' : 'active';
+
+            const updatedStoreData = storeData.map((store) =>
+                store.id === id ? { ...store, status: newStatus } : store
+            );
+            setStoreData(updatedStoreData);
+            setStoreFilterData(updatedStoreData);
+
+            const formData = new FormData();
+            formData.append("shop", shop);
+            formData.append("action", "edit");
+            formData.append("storeDetails", JSON.stringify({ id, status: newStatus }));
+
+            const response = await fetch("/app/stores", {
+                method: "POST",
+                body: formData,
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                console.error("Failed to update the store status");
+                setStoreData(storeData);
+            }
+        }
+    };
+
     const handlecloseModal = () => {
         setIsViewDetails(!isviewDetails);
 
@@ -570,7 +589,11 @@ export default function StorePage() {
                 <IndexTable.Cell>{state}</IndexTable.Cell>
                 <IndexTable.Cell>{city}</IndexTable.Cell>
                 <IndexTable.Cell>{zipcode}</IndexTable.Cell>
-                <IndexTable.Cell>{status}</IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Button variant="monochromePlain" onClick={() => handleStoreStatus(id)}>
+                        {status === 'active' ? 'Active' : 'Draft'}
+                    </Button>
+                </IndexTable.Cell>
                 <IndexTable.Cell>
                     <Button variant="plain" onClick={() => handleViewStoreDetails(id)}>
                         <Icon source={ViewIcon} tone="base" />
@@ -592,13 +615,10 @@ export default function StorePage() {
         )
     );
 
-
-
     const handleStoreTabChange = useCallback(
         (selectedTabIndex) => setCurrentTab(selectedTabIndex),
         [],
     );
-
 
     //drop zone
     const hasError = rejectedFiles.length > 0;
@@ -613,37 +633,91 @@ export default function StorePage() {
     );
 
     useEffect(() => {
-        setstoreDetails({ ...storeDetails, store_marker_icon: files, store_image: storeImage })
-    }, [files, storeImage])
-    const handleDropStoreImage = useCallback(
-        (_droppedFiles, acceptedFiles, rejectedFiles) => {
-            setStoreImage(acceptedFiles[0]);
-            // setstoreDetails({ ...storeDetails, store_image: acceptedFiles[0] })
-            // setstoreDetails({ ...storeDetails, [id]: e })
+        setstoreDetails({ ...storeDetails, store_marker_icon: files, store_image: storeImages })
+    }, [files, storeImages]);
 
-            // setFiles((files) => [...files, ...acceptedFiles]);
-            // setRejectedFiles(rejectedFiles);
-        },
-        [],
-    );
+    // const handleDropstoreImages = useCallback(
+    //     (_droppedFiles, acceptedFiles, rejectedFiles) => {
+    //         setstoreImages(acceptedFiles);
+    //         // setstoreDetails({ ...storeDetails, store_image: acceptedFiles[0] })
+    //         // setstoreDetails({ ...storeDetails, [id]: e })
 
+    //         // setFiles((files) => [...files, ...acceptedFiles]);
+    //         // setRejectedFiles(rejectedFiles);
+    //     },
+    //     [],
+    // );
 
+    // const handleDropstoreImages = useCallback((_droppedFiles, acceptedFiles, rejectedFiles) => {
+    //     const newURLs = acceptedFiles.reduce((acc, file) => {
+    //         if (validImageTypes.includes(file.type)) {
+    //             const fileURL = window.URL.createObjectURL(file);
+    //             acc.push({ file, fileURL });
+    //         } else {
+    //             console.log('Invalid file type', file.type);
+    //         }
+    //         return acc;
+    //     }, []);
+    //     // newURLs.map((file)=> {
+    //     //     console.log(file);
+    //     //     setstoreImages(file);
+    //     // })
+    //     console.log(newURLs);
+    //     setstoreImages(newURLs);
+    // }, []);
+
+    const handleDropstoreImages = useCallback((_droppedFiles, acceptedFiles, rejectedFiles) => {
+        // Collect both image URLs and file names
+        const newURLs = acceptedFiles.reduce((acc, file) => {
+            if (validImageTypes.includes(file.type)) {
+                const fileURL = window.URL.createObjectURL(file); // Generate the object URL for the image
+                acc.push({ fileURL, fileName: file.name }); // Store both the URL and the file name
+            } else {
+                console.log('Invalid file type', file.type);
+            }
+            return acc;
+        }, []);
+    
+        console.log(newURLs); // Logs an array of objects with URL and file name
+        setstoreImages(newURLs); // Update the state with objects containing URLs and file names
+    }, []);    
 
     const validImageTypes = ['image/gif', 'image/jpeg', 'image/png'];
-    const StoreImageUpload = !storeImage && <DropZone.FileUpload />;
-    const uploadedStoreImage = storeImage && (
+    const storeImagesUpload = !storeImages.length && <DropZone.FileUpload />;
+
+    const uploadedstoreImages = storeImages.length > 0 && (
         <LegacyStack>
-            <Thumbnail
-                size="small"
-                alt={storeImage.name}
-                source={
-                    validImageTypes.includes(storeImage.type)
-                        ? window.URL.createObjectURL(storeImage)
-                        : NoteIcon
-                }
-            />
+            {storeImages.map(({ fileURL, fileName   }, index) => (
+                <LegacyStack alignment="center" key={index}>
+                    <Thumbnail
+                         size="small"
+                         alt={fileName}
+                        source={fileURL}
+                    />
+                </LegacyStack>
+            ))}
         </LegacyStack>
     );
+
+    // const storeImagesUpload = !storeImages && <DropZone.FileUpload />;
+    // const uploadedstoreImages = storeImages && (
+    //     <LegacyStack>
+    //         {storeImages.map((file, index) => (
+    //             <LegacyStack alignment="center" key={index}>
+    //                 <Thumbnail
+    //                     size="small"
+    //                     alt={file.name}
+    //                     source={
+    //                         validImageTypes.includes(file.type)
+    //                             ? window.URL.createObjectURL(file)
+    //                             : NoteIcon
+    //                     }
+    //                 />
+    //             </LegacyStack>
+    //         ))}
+
+    //     </LegacyStack>
+    // );
 
     const StoreMarkerIconUpload = !files && <DropZone.FileUpload />;
     const uploadedStoreMarkerIcon = files && (
@@ -660,7 +734,6 @@ export default function StorePage() {
         </LegacyStack>
     );
 
-
     const errorMessage = hasError && (
         <Banner title="The following images couldn’t be uploaded:" tone="critical">
             <List type="bullet">
@@ -672,7 +745,6 @@ export default function StorePage() {
             </List>
         </Banner>
     );
-
 
     const handleStoreValues = (e, id) => {
         // if (id === " status") {
@@ -764,7 +836,6 @@ export default function StorePage() {
     //     },
     // ];
 
-
     const toggleActive = useCallback(() => setActiveModal((activeModal) => !activeModal), []);
     const handleDropcsvFile = useCallback(
         (_droppedFiles, acceptedFiles, rejectedFiles) => {
@@ -774,6 +845,7 @@ export default function StorePage() {
         },
         [],
     );
+
     const handleCloseModal = () => {
         setActiveModal(!activeModal);
         setCSVFile(null);
@@ -810,7 +882,6 @@ export default function StorePage() {
         });
     }
 
-
     useEffect(() => {
         if (readFile !== undefined) {
             console.log('readFile', readFile);
@@ -837,7 +908,6 @@ export default function StorePage() {
             setstoreDetails(null);
         }
     }
-
 
     function exportToCSV(data, filename = 'export.csv') {
         // Convert JSON to CSV format
@@ -883,7 +953,6 @@ export default function StorePage() {
         //   ];
         exportToCSV(storeData, 'storeData.csv');
     }
-
 
     // useEffect(() => {
     //     console.log('current', currentTab);
@@ -938,7 +1007,6 @@ export default function StorePage() {
                                             </FormLayout>
                                         </LegacyCard>
                                     </Layout.AnnotatedSection>
-
 
                                     <Layout.AnnotatedSection
                                         id="Address"
@@ -1109,7 +1177,6 @@ export default function StorePage() {
                                         </LegacyCard>
                                     </Layout.AnnotatedSection>
 
-
                                     <Layout.AnnotatedSection
                                         id="StoreOtherDetail"
                                         title="Store Other Detail"
@@ -1151,7 +1218,6 @@ export default function StorePage() {
                                         </LegacyCard>
                                     </Layout.AnnotatedSection>
 
-
                                     <Layout.AnnotatedSection
                                         id="UploadImages"
                                         title="Upload Images"
@@ -1182,15 +1248,15 @@ export default function StorePage() {
                                                         <Text as="h3"> Upload Store Image</Text>
                                                         <div style={{ width: '100%', height: 114, paddingTop: 10, display: 'flex' }} className="drop-zone">
                                                             {errorMessage}
-                                                            <DropZone allowMultiple={false} accept="image/*" type="image" onDrop={handleDropStoreImage} >
-                                                                {StoreImageUpload}
+                                                            <DropZone allowMultiple={true} accept="image/*" type="image" onDrop={handleDropstoreImages} >
+                                                                {storeImagesUpload}
                                                                 {/* {storeDetails?.store_image} */}
-
+                                                                {uploadedstoreImages}
                                                             </DropZone>
-                                                            <div style={{ width: '50%' }}>
-                                                                {uploadedStoreImage}
+                                                            {/* <div style={{ width: '50%' }}>
+                                                                {uploadedstoreImages}
 
-                                                            </div>
+                                                            </div> */}
 
                                                         </div>
                                                     </Box>
@@ -1200,7 +1266,6 @@ export default function StorePage() {
 
                                         </LegacyCard>
                                     </Layout.AnnotatedSection>
-
 
                                     <Layout.AnnotatedSection>
                                         <Button submit variant="primary" textAlign="end" onClick={getStoreDetails} >{isEdit ? 'UPDATE' : 'NEXT'}</Button>
@@ -1216,10 +1281,7 @@ export default function StorePage() {
                             }
                         </div>
                     </Page>
-
                     :
-
-
                     <Page
                         fullWidth
                         title={"Stores"}
@@ -1317,7 +1379,6 @@ export default function StorePage() {
                             )}
                         </Card>
                     </Page>
-
             }
 
             <div style={{ height: '500px' }}>
@@ -1475,4 +1536,3 @@ function isEmpty(value) {
         return value === '' || value == null;
     }
 }
-
